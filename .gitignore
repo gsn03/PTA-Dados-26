@@ -1,0 +1,17 @@
+# Ambiente
+.venv/
+__pycache__/
+*.pyc
+.env
+
+# Dados
+data/raw/
+data/clean/
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
