@@ -1,6 +1,6 @@
-# PTA Dados 2026 — Desafio Técnico
+# PTA Dados 2026
 
-Repositório do desafio técnico do Processo Trainee Acelerado da Equipe de Dados — 2026.
+Repositório do desafio do PTA de Dados 2026.1
 
 ## Estrutura
 
