@@ -145,3 +145,28 @@ df["prazo_proximo"] = df["prazo_proximo"].dt.strftime("%d-%m-%Y")
 df["prazo_proximo"] = df["prazo_proximo"].fillna("Não informado")
 
 print(df["prazo_proximo"].head(10))
+
+print("===============================================================")
+print("tratamento valor_causa")
+print("===============================================================")
+
+df["valor_causa"] = df["valor_causa"].astype(str).str.strip()
+df["valor_causa"] = df["valor_causa"].replace(r'R\$','',regex=True)
+df["valor_causa"] = pd.to_numeric(df["valor_causa"], errors='coerce')
+
+media = df["valor_causa"].mean().round(2) 
+
+df["valor_causa"] = df["valor_causa"].fillna(media)
+
+pd.set_option("display.float_format", lambda x: f"R$ {x:.2f}")
+
+print(df["valor_causa"])
+
+print("===============================================================")
+print("tratamento de observacoes")
+print("===============================================================")
+
+df["observacoes"] = df["observacoes"].str.capitalize()
+df["observacoes"] = df["observacoes"].fillna("Não informado")
+
+print(df["observacoes"].unique())
