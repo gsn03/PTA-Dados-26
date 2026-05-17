@@ -3,8 +3,6 @@ import os
 
 caminho = "data/sujo/processos.csv"
 
-destino = "data/limpo"
-
 df = pd.read_csv(caminho)
 
 print("===============================================================")
@@ -150,16 +148,22 @@ print("===============================================================")
 print("tratamento valor_causa")
 print("===============================================================")
 
+def tratar_valor(v):
+    str(v).strip()
+    tem_virgula = "," in v
+    tem_ponto = "." in v
+
+
 df["valor_causa"] = df["valor_causa"].astype(str).str.strip()
 df["valor_causa"] = df["valor_causa"].replace(r'R\$','',regex=True)
+df["valor_causa"] = df["valor_causa"].str.replace(r'\.(\d{3})$', r'\1', regex=True)
 df["valor_causa"] = pd.to_numeric(df["valor_causa"], errors='coerce')
 
 media = df["valor_causa"].mean().round(2) 
 
 df["valor_causa"] = df["valor_causa"].fillna(media)
 
-pd.set_option("display.float_format", lambda x: f"R$ {x:.2f}")
-
+df["valor_causa"] = df["valor_causa"].apply(lambda x: f"R$ {x:.2f}" )
 print(df["valor_causa"])
 
 print("===============================================================")
@@ -170,3 +174,5 @@ df["observacoes"] = df["observacoes"].str.capitalize()
 df["observacoes"] = df["observacoes"].fillna("Não informado")
 
 print(df["observacoes"].unique())
+
+df.to_csv("basededadoslimpa.csv",index=False)
