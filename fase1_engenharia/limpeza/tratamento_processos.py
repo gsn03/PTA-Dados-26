@@ -106,3 +106,42 @@ df["advogado_responsavel"] = df["advogado_responsavel"].str.title()
 print(df["advogado_responsavel"].unique())
 #['Dra. Cavalcante' 'Dra. Fontes' 'Dr. Melo' 'Dra Fontes' 'Dr. Barros']
 
+print("===============================================================")
+print("tratamento da data_abertura")
+print("===============================================================")
+
+
+mapa_meses = {
+    "janeiro": "01",
+    "fevereiro": "02",
+    "março": "03",
+    "abril": "04",
+    "maio": "05",
+    "junho": "06",
+    "julho": "07",
+    "agosto": "08",
+    "setembro": "09",
+    "outubro": "10",
+    "novembro": "11",
+    "dezembro": "12"
+}
+df["data_abertura"] = df["data_abertura"].str.lower().replace(mapa_meses, regex=True)
+df["data_abertura"] = df["data_abertura"].str.replace(r'[de]', ' ', regex=True)
+
+df["data_abertura"] = pd.to_datetime(df["data_abertura"],format="mixed")
+df["data_abertura"] = df["data_abertura"].dt.strftime("%d-%m-%Y")
+
+print(df["data_abertura"])
+
+print("===============================================================")
+print("tratamento prazo proximo")
+print("===============================================================")
+
+df["prazo_proximo"] = df["prazo_proximo"].str.lower().replace(mapa_meses, regex=True)
+df["prazo_proximo"] = df["prazo_proximo"].str.replace(r'[de]', ' ', regex=True)
+
+df["prazo_proximo"] = pd.to_datetime(df["prazo_proximo"],format="mixed")
+df["prazo_proximo"] = df["prazo_proximo"].dt.strftime("%d-%m-%Y")
+df["prazo_proximo"] = df["prazo_proximo"].fillna("Não informado")
+
+print(df["prazo_proximo"].head(10))
