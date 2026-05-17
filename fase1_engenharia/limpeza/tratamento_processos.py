@@ -148,12 +148,6 @@ print("===============================================================")
 print("tratamento valor_causa")
 print("===============================================================")
 
-def tratar_valor(v):
-    str(v).strip()
-    tem_virgula = "," in v
-    tem_ponto = "." in v
-
-
 df["valor_causa"] = df["valor_causa"].astype(str).str.strip()
 df["valor_causa"] = df["valor_causa"].replace(r'R\$','',regex=True)
 df["valor_causa"] = df["valor_causa"].str.replace(r'\.(\d{3})$', r'\1', regex=True)
