@@ -1,9 +1,20 @@
 {
     "arquivo_origem": "intimacao_sentenca_camila_martins.pdf",
-    "tipo_documento": "intimacao_citacao",
-    "numero_processo": "2233445-66.2022.8.17.0001",
-    "tribunal_origem": null,
-    "partes": null,
-    "prazos_identificados": null,
+    "tribunal_vara": "Comarca de Recife — 12ª Vara Cível",
+    "tipo_documento": "intimacao",
+    "tipo_processo": "Cível",
+    "tipo_acao": "indenização por\ndanos materiais e morais",
+    "n_processo": "2233445-66.2022.8.17.0001",
+    "acusando_autor": null,
+    "acusado_reu": null,
+    "nome_advogado": null,
+    "oab_advogado": null,
+    "resultado_julgamento": "PARCIALMENTE PROCEDENTES",
+    "valores_condenacao": [
+        "R$ 28.000,00",
+        "R$ 8.000,00"
+    ],
+    "cnpj_encontrado": null,
+    "data_expedicao": "05 de fevereiro de 2026",
     "texto_bruto": "PODER JUDICIÁRIO — ESTADO DE PERNAMBUCO\nComarca de Recife — 12ª Vara Cível\nMANDADO DE INTIMAÇÃO\nO MM. Juiz de Direito da 12ª Vara Cível da Comarca de Recife, nos autos da ação de indenização por\ndanos materiais e morais (processo nº 2233445-66.2022.8.17.0001), movida por CAMILA MARTINS em\nface de SEGURADORA ATLÂNTICO SUL S/A, FAZ SABER à advogada Dra. Fernanda Melo, inscrita nos\nquadros da OAB sob o nº 54.321, na qualidade de patrona da parte Autora:\nQue foi prolatada sentença nos autos supra referidos, julgando PARCIALMENTE PROCEDENTES os\npedidos formulados na exordial, condenando a Ré ao pagamento de indenização por danos materiais no\nvalor de R$ 28.000,00 e danos morais no importe de R$ 8.000,00, tudo acrescido de correção monetária\npelo IPCA-E e juros de mora de 1% ao mês desde a citação.\nFica a advogada supra mencionada INTIMADA para, querendo, interpor o competente recurso de\napelação, no prazo legal de quinze dias úteis, a ser contado do primeiro dia útil subsequente à data em\nque esta intimação for certificada como lida no sistema de intimações eletrônicas, nos termos do art. 230\ndo CPC e da Resolução CNJ nº 234/2016.\nDecorrido o prazo sem manifestação, os autos serão remetidos ao arquivo, com baixa definitiva.\nRecife, 05 de fevereiro de 2026.\nDiretor de Secretaria\n12ª Vara Cível — Comarca de Recife/PE\n"
 }
