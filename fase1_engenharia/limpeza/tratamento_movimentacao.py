@@ -5,10 +5,10 @@ from pathlib import Path
 
 # LEITURA
 basedir = Path(__file__).resolve().parent.parent.parent
-caminho_bruto = basedir / "datasets" / "bruto" / "Movimentacoes_bruto.xlsx"
-caminho_tratado = basedir / "datasets" / "tratado" / "movimentacoes_tratado.xlsx"
+caminho_bruto = basedir / "data" / "Planilhas_sem_tratamento" / "movimentacoes.csv"
+caminho_tratado = basedir / "data" / "Bases_Tratadas" / "Movimentacoes_tratado.csv"
 
-df = pd.read_excel(caminho_bruto)
+df = pd.read_csv(caminho_bruto, sep=',', encoding='utf-8')
 
 # função para parsing de datas
 def parse_data(valor):
@@ -68,7 +68,7 @@ for col in colunas_data:
     df_export[col] = df_export[col].dt.strftime('%Y-%m-%d')
 
 caminho_tratado.parent.mkdir(parents=True, exist_ok=True)
-df.to_excel(caminho_tratado, index=False)
+df.to_csv(caminho_tratado, sep=';', index=False, encoding='utf-8-sig')
 
 # visualização
 pd.set_option('display.max_columns', None, 'display.width', None)
