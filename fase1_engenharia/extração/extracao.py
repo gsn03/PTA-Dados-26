@@ -1,5 +1,5 @@
 import pdfplumber as plu
-from regras_extracao import extrair_intimacao, extrair_contrato, extrair_citacao
+from regras_extracao import extrair_intimacao, extrair_contrato, extrair_citacao, extrair_peticao
 import json
 from pathlib import Path
 from typing import Callable #callable ele mostra que não é um string ou um inteiro,
@@ -47,3 +47,8 @@ if __name__ == "__main__":
     pasta_pdfs_citacoes = pasta_base / "data" / "pdfs_brutos" / "citacao"
     pasta_saida_citacoes = pasta_base / "data" / "Texto_json" / "citacao"    
     processar_lote_pdfs(pasta_pdfs_citacoes, pasta_saida_citacoes, extrair_citacao)
+
+    #Petições
+    pasta_pdfs_peticoes = pasta_base / "data" / "pdfs_brutos" / "peticao" 
+    pasta_saida_peticoes = pasta_base / "data" / "Texto_json" / "peticao"
+    processar_lote_pdfs(pasta_pdfs_peticoes, pasta_saida_peticoes, extrair_peticao)
