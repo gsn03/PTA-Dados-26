@@ -45,12 +45,11 @@ def pipeline_Tratamento_Processos (caminho_entrada, caminho_saida):
       'suspenso' : 'Suspenso',
       'suspended' : 'Suspenso',
       'em recurso' : 'Em recurso',
-      'sttlement' : 'Settlement',
-      'appeal' : 'Appeal'
+      'settlement' : 'Acordo',
+      'appeal' : 'Ativo'
   }
 
   df_processos['status'] = df_processos['status'].map(mapa_status)
-  df_processos['status'] = df_processos['status'].fillna('Desconhecido')
 
 
   #ADVOGADOS
@@ -68,9 +67,15 @@ def pipeline_Tratamento_Processos (caminho_entrada, caminho_saida):
 
 
   #OBSERVAÇÕES
+  df_processos['observacoes'] = df_processos['observacoes'].str.title()
+  
+  mapa_observacoes = {
+      'Cliente Não Responde' : 'Aguardando documentos'   
+  }
+
+  df_processos['observacoes'] = df_processos['observacoes'].map(mapa_observacoes)
   df_processos['observacoes'] = df_processos['observacoes'].fillna('Sem observações')
 
-  df_processos['observacoes'] = df_processos['observacoes'].str.title()
 
   #Formatando a FASE
   df_processos['fase'] = df_processos['fase'].str.title()
@@ -127,8 +132,6 @@ def pipeline_Tratamento_Processos (caminho_entrada, caminho_saida):
 
   df_processos['data_abertura'] = pd.to_datetime(df_processos['data_abertura'], dayfirst=True, format='mixed')
   df_processos['data_abertura'] = df_processos['data_abertura'].dt.strftime('%Y-%m-%d')
-
-  df_processos['data_abertura'] = df_processos['data_abertura'].fillna('Sem data delimitada')#preenche os nulos com 'Sem data delimitada'
 
 
 
