@@ -1,0 +1,10 @@
+{
+    "arquivo_origem": "contrato_honorarios_joao_silva.pdf",
+    "tipo_documento": "contrato_honorarios",
+    "tipo_processo": "Trabalhista",
+    "contratante": "João Silva",
+    "cpf_cnpj_contratante": "123.456.789-00",
+    "endereco_encontrado": "Rua das Flores, 45, Recife/PE",
+    "valor_total": "R$ 18.000,00",
+    "honorarios_exito": "20% (vinte por cento) sobre"
+}
