@@ -1,5 +1,5 @@
 import pdfplumber as plu
-from regras_extracao import extrair_intimacao, extrair_contrato, extrair_citacao, extrair_peticao
+from regras_extracao import extrair_intimacao, extrair_citacao, extrair_peticao
 import json
 from pathlib import Path
 from typing import Callable #callable ele mostra que não é um string ou um inteiro,
