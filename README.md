@@ -1,28 +1,53 @@
-# PTA Dados 2026
+# Projeto PTA Dados
 
-Repositório do desafio do PTA de Dados 2026.1
+## 📌 Visão Geral
+O projeto **PTA Dados** é uma arquitetura de engenharia de dados e inteligência artificial desenvolvida para automação, extração e armazenamento de dados jurídicos (Petições, Citações, Intimações, Acordos e Contratos). 
 
-## Estrutura
+O projeto está dividido em fases, sendo a **Fase 1** focada na extração de dados não estruturados (PDFs convertidos em JSON) e no armazenamento estruturado em um Banco de Dados Relacional.
 
-```
-pta-dados-2026/
-├── fase1_engenharia/
-│   ├── ingestao/        # Leitura das planilhas e PDFs
-│   ├── limpeza/         # Tratamento e validação dos dados
-│   └── api/             # FastAPI — exposição dos dados tratados
-├── fase2_agente/
-│   ├── rag/             # Arquitetura RAG com LangChain
-│   ├── grafo/           # Fluxo do agente com LangGraph
-│   └── automacoes/      # Grafos agendados de alertas
-├── fase3_interface/     # Interface Streamlit (chat + painel analítico)
-├── data/
-│   └── pdfs/            # PDFs do cliente (não versionar dados sensíveis)
-├── .env.example         # Variáveis de ambiente necessárias
-├── docker-compose.yml   # Postgres + pgvector local
-├── requirements.txt     # Dependências do projeto
-├── DECISIONS.md         # Decisões técnicas e de arquitetura
-└── README.md            # Este arquivo
-```
+## 🛠 Tecnologias Utilizadas
+* **Linguagem:** Python 3.x
+* **Banco de Dados:** PostgreSQL (com suporte nativo a `pgvector` via Docker)
+* **ORM:** SQLAlchemy
+* **API:** FastAPI e Uvicorn
+* **Extração de Texto:** Expressões Regulares (`re`) nativas do Python
+* **Gerenciamento de Ambiente:** Docker Compose e `python-dotenv`
+
+## 📂 Estrutura de Diretórios
+A arquitetura do projeto está modularizada da seguinte forma:
+
+```text
+PTA-DADOS-26/
+├── data/                           # Armazenamento local de arquivos
+│   ├── Bases_Tratadas/             # Dados limpos e prontos para banco
+│   ├── pdfs_brutos/                # Documentos originais do escritório
+│   ├── Planilhas_sem_tratamento/   # Arquivos de apoio em formato tabular
+│   └── Texto_json/                 # Dados extraídos categorizados
+├── fase1_engenharia/               # Core da Engenharia de Dados
+│   ├── api/                        # Endpoints do FastAPI (Rotas de consulta)
+│   ├── BD/                         # Modelagem e conexão com Banco de Dados
+│   │   ├── Ingestão/               # Scripts de carga (ETL/Upsert)
+│   │   │   └── insert_clientes.py  # Script de inserção inteligente de clientes
+│   │   ├── criar_banco.py          # Script de materialização (DDL)
+│   │   ├── database_model.py       # Motor de conexão via SQLAlchemy
+│   │   └── model_Cliente.py        # Modelo relacional da tabela Clientes
+│   ├── extração/                   # Lógica de processamento de PDFs
+│   │   ├── extracao.py             # Motor principal de leitura de documentos
+│   │   └── regras_extracao.py      # Dicionários de Expressões Regulares (Regex)
+│   └── limpeza/                    # Tratamento e normalização de dados
+│       ├── Tratamento_Cliente.py
+│       ├── Tratamento_Honorarios.py
+│       ├── tratamento_movimentacao.py
+│       └── Tratamento_processos.py
+├── fase2_agente/                   # [Em Desenvolvimento] IA e RAG
+├── fase3_interface/                # [Em Desenvolvimento] Front-end
+├── .env                            # Variáveis de ambiente (Credenciais ocultas)
+├── .env.example                    # Template de variáveis para novos desenvolvedores
+├── .gitignore                      # Regras de exclusão de arquivos para o repositório Git
+├── DECISIONS.md                    # Registro de decisões arquiteturais da equipe
+├── docker-compose.yml              # Orquestração do banco de dados PostgreSQL
+├── README.md                       # Documentação principal do projeto
+└── requirements.txt                # Lista de dependências e bibliotecas Python
 
 ## Pré-requisitos
 
