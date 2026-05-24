@@ -4,6 +4,7 @@
     "tipo_processo": "Cível",
     "contratante": "Maria Oliveira",
     "cpf_cnpj_contratante": "987.654.321-11",
+    "oab_advogado": "Não encontrada",
     "endereco_encontrado": "Olinda/PE",
     "valor_total": "R$ 12.500,00",
     "honorarios_exito": "15% sobre"

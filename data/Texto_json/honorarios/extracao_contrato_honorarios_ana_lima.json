@@ -4,7 +4,8 @@
     "tipo_processo": "Cível",
     "contratante": "Não encontrado",
     "cpf_cnpj_contratante": null,
-    "endereco_encontrado": null,
+    "oab_advogado": "PE 12.345",
+    "endereco_encontrado": "Rua dos",
     "valor_total": null,
     "honorarios_exito": null
 }
