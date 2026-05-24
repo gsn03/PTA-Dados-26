@@ -54,6 +54,8 @@ def pipeline_movimentacao(df):
     df["dias_prazo"] = df["descricao"].str.extract(
         r'(\d+)\s*dias?'
     )
+    df["dias_prazo"] = df["dias_prazo"].fillna(0).astype(int) # Substitui nulos por 0 dias e converte para inteiro
+    df["prazo_final"] = df["prazo_final"].fillna(pd.NaT)
 
     # TRATAMENTO DUPLICATAS
     # remover linhas 100% iguais
@@ -68,7 +70,12 @@ def pipeline_movimentacao(df):
     #formatando as datas
     colunas_data = ["data_movimentacao", "prazo_gerado", "data_descricao", "prazo_final"]
     for col in colunas_data:
-        df_export[col] = df_export[col].dt.strftime('%Y-%m-%d')
+        df[col] = df[col].dt.strftime('%Y-%m-%d')
+
+    df["prazo_gerado"] = df["prazo_gerado"].fillna("Sem prazo")
+    df["data_movimentacao"] = df["data_movimentacao"].fillna("Sem data")
+    df["data_descricao"] = df["data_descricao"].fillna("Sem data")
+    df["prazo_final"] = df["prazo_final"].fillna("Sem prazo final")
 
     caminho_tratado.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(caminho_tratado, sep=';', index=False, encoding='utf-8-sig')
