@@ -14,13 +14,13 @@ def carregamento_honorarios_json(pasta_jsons: Path): #Essa função faz com que 
     #Abre a conexão com o banco
     db = SessionLocal()
     try:
-        for arquivo in pasta_jsons.glob("*.json"): #Identifica os arquivos .json
+        for arquivo in pasta_jsons.rglob("*.json"): #Identifica os arquivos .json
             if arquivo.name == "Relatorio_Geral_Contratos.json":
                 continue
             with open(arquivo, "r", encoding="utf-8") as f:
                 dados = json.load(f)
-            if dados.get("tipo_documento") != "contrato_honorarios": #Apenas documentos marcados como honorários
-                print(f"Pulei o arquivo {arquivo.name} porque o tipo não bate.")
+            tipos_permitidos = ["contrato_honorarios", "peticao", "acordo", "sentenca"]
+            if dados.get("tipo_documento") not in tipos_permitidos: 
                 continue
             nome_arquivo = dados.get("arquivo_origem")
             if not nome_arquivo:
@@ -32,19 +32,24 @@ def carregamento_honorarios_json(pasta_jsons: Path): #Essa função faz com que 
                 novo_contrato = contrato_honorario(
                     arquivo_origem=nome_arquivo,
                     tipo_processo=dados.get("tipo_processo"),
-                    contratante=dados.get("nome_cliente"),
-                    cpf_cnpj_contratante=dados.get("cpf_cnpj"),
+                    contratante=dados.get("contratante"),
+                    cpf_cnpj_contratante=dados.get("cpf_cnpj_contratante"),
                     nome_advogado=dados.get("nome_advogado"),
                     oab_advogado=dados.get("oab_advogado"),
                     endereco_encontrado=dados.get("endereco_encontrado"),
                     valor_total=dados.get("valor_total"),
-                    honorarios_exito=dados.get("honorarios_exito")
+                    honorarios_exito=dados.get("honorarios_exito"),
+                    valor_causa=dados.get("valor_causa"),
+                    valor_acordo=dados.get("valor_acordo"),
+                    valor_condenacao=dados.get("valor_condenacao"),
                 )
                 db.add(novo_contrato)
         #Confirma as inserções
         db.commit()
+        print("Dados inseridos com sucesso no banco")
     except Exception as e:
         #Se tiver falha, as alterações são desfeitas 
+        print(f"Ocorreu um erro ao tentar salvar no banco: {e}")
         db.rollback()
     finally:
         db.close()
@@ -52,12 +57,10 @@ def carregamento_honorarios_json(pasta_jsons: Path): #Essa função faz com que 
 if __name__ == "__main__":
 # Garante o caminho absoluto correto subindo até a raiz do projeto
     raiz_projeto = Path(__file__).resolve().parent.parent.parent.parent
-    pasta_jsons_honorarios = raiz_projeto / "data" / "Texto_json" / "honorarios"
-# Verifica se a pasta realmente existe no disco
-    if not pasta_jsons_honorarios.exists():
-        print(f"❌ ERRO: A pasta {pasta_jsons_honorarios} NÃO EXISTE no seu computador!")
+    pasta_jsons_principal = raiz_projeto / "data" / "Texto_json"
+# Verifica se a pasta existe
+    if not pasta_jsons_principal.exists():
+        print(f"A pasta {pasta_jsons_principal} não existe")
     else:
-        # Conta quantos arquivos .json existem lá dentro
-        arquivos = list(pasta_jsons_honorarios.glob("*.json"))
-# Executa a inserção
-        carregamento_honorarios_json(pasta_jsons_honorarios)
+        # Passa a pasta principal para a função processar tudo de forma unificada
+        carregamento_honorarios_json(pasta_jsons_principal)
