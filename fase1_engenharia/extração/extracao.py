@@ -1,5 +1,5 @@
 import pdfplumber as plu
-from regras_extracao import extrair_intimacao, extrair_citacao, extrair_peticao, extrair_contrato_honorarios
+from regras_extracao import extrair_intimacao, extrair_citacao, extrair_peticao, extrair_contrato_honorarios, extrair_acordos
 import json
 from pathlib import Path
 from typing import Callable 
@@ -49,3 +49,8 @@ if __name__ == "__main__":
     pasta_pdfs_honorarios = pasta_base / "data" / "pdfs_brutos" / "contrato" 
     pasta_saida_honorarios = pasta_base / "data" / "Texto_json" / "honorarios"
     processar_lote_pdfs(pasta_pdfs_honorarios, pasta_saida_honorarios, extrair_contrato_honorarios)
+
+    # Acordos
+    pasta_pdfs_acordos = pasta_base / "data" / "pdfs_brutos" / "acordo" 
+    pasta_saida_acordos = pasta_base / "data" / "Texto_json" / "acordos"
+    processar_lote_pdfs(pasta_pdfs_acordos, pasta_saida_acordos, extrair_acordos)
