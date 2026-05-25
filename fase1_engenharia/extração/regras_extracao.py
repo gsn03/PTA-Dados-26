@@ -184,3 +184,82 @@ def extrair_peticao(texto_bruto: str, nome_arquivo: str) -> dict:
         "valor_causa": valor_encontrado,
         "texto_bruto": texto_bruto
     }
+
+def extrair_acordos(texto_bruto: str, nome_arquivo: str) -> dict:
+    """Regras para extrair dados de acordos"""
+    import re # usada para encontrar sequência de caracteres específicas 
+    
+    #numero do processo
+    padrao_processo = r"\d{7}-\d{2}\.\d{4}\.\d{1,2}\.\d{2}\.\d{4}"
+    match_processo = re.search(padrao_processo, texto_bruto)
+    n_processo = match_processo.group(0) if match_processo else None
+    
+    
+    # 2. Tipo de Processo
+    tipo_processo = "Trabalhista" if "TRT" in texto_bruto or "Trabalho" in texto_bruto else "Cível"
+    
+    # 3. Tipo de Ação
+    tipo_acao = None
+    match_acao = re.search(r"ação de\s+([^\(]+?)\s*\(?processo", texto_bruto, re.IGNORECASE)
+    if match_acao:
+        tipo_acao = match_acao.group(1).strip()
+
+    # 4. Partes (Acusador/Acusado - Autor/Réu)
+    autor, reu = None, None
+    match_partes = re.search(r"movida por\s+(.+?)\s+em face de\s+(.+?),", texto_bruto, re.IGNORECASE)
+    if match_partes:
+        autor = match_partes.group(1).strip()
+        reu = match_partes.group(2).strip()
+        
+    # 5. Advogado e OAB
+    advogado, oab = None, None
+    match_adv = re.search(r"Dra?\.\s+([^,]+),\s+inscrita.*?OAB.*?nº\s+([\d\.]+)", texto_bruto, re.IGNORECASE)
+    if match_adv:
+        advogado = match_adv.group(1).strip()
+        oab = match_adv.group(2).strip()
+        
+    # 6. Decisão e Valores (Deferido/Indeferido/Parcial)
+    resultado_julgamento = None
+    match_resultado = re.search(r"julgando\s+(PROCEDENTES|IMPROCEDENTES|PARCIALMENTE PROCEDENTES)", texto_bruto, re.IGNORECASE)
+    if match_resultado:
+        resultado_julgamento = match_resultado.group(1).upper()
+        
+    # Captura todos os valores em Reais (R$) encontrados no documento
+    valores = re.findall(r"R\$\s*[\d\.]+,[\d]{2}", texto_bruto)
+
+    # 7. Data de Expedição
+    data_expedicao = None
+    match_data = re.search(r"Recife,\s+([\d]{1,2}\s+de\s+[a-zA-Z]+\s+de\s+[\d]{4})", texto_bruto, re.IGNORECASE)
+    if match_data:
+        data_expedicao = match_data.group(1).strip()
+    
+    tribunal_vara = None
+    match_tribunal = re.search(r"(?:COMARCA DE.+?|PODER JUDICIÁRIO.+?)\s+([^\n]+Vara[^\n]+|[^\n]+Turma[^\n]+)", texto_bruto, re.IGNORECASE)
+    if match_tribunal:
+        tribunal_vara = match_tribunal.group(1).strip()
+
+    return {
+        "arquivo_origem": nome_arquivo,
+        "tribunal_vara": tribunal_vara,
+        "tipo_documento": "intimacao",
+        "tipo_processo": tipo_processo,
+        "n_processo": n_processo,
+        "acusando_autor": autor,
+        "acusado_reu": reu,
+        "nome_advogado": advogado,
+        "oab_advogado": oab,
+        "valores_condenacao": valores if valores else None,
+        "data_expedicao": data_expedicao,
+        "texto_bruto": texto_bruto
+    }
+    
+
+
+    ''''
+    Número do processo      OK
+Unidade (qual vara ou  juizado)
+Partes (e consequentemente os patronos, ou seja, os advogados)
+Valor da causa (se tiver no acordo, mas é parte importante do processo, então já deixa anotado caso tenha outra atividade dessa)
+Objeto do processo 
+Valores que serão pagos e condições de pagamento
+    '''
