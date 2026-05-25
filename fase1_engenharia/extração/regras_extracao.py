@@ -172,7 +172,6 @@ def extrair_peticao(texto_bruto: str, nome_arquivo: str) -> dict:
         "texto_bruto": texto_bruto
     }
 
-<<<<<<< HEAD
 def extrair_contrato_honorarios(texto_bruto: str, nome_arquivo: str) -> dict:
     """Regras para extrair dados de Contratos de Honorários (Trazido para o script principal)"""
     texto_upper = texto_bruto.upper()
@@ -220,83 +219,86 @@ def extrair_contrato_honorarios(texto_bruto: str, nome_arquivo: str) -> dict:
         "valor_total_honorarios": match_valor.group(1).strip() if match_valor else None,
         "honorarios_exito": match_exito.group(1).strip() if match_exito else None
     }
-=======
+
 def extrair_acordos(texto_bruto: str, nome_arquivo: str) -> dict:
     """Regras para extrair dados de acordos"""
     import re # usada para encontrar sequência de caracteres específicas 
     
-    #numero do processo
-    padrao_processo = r"\d{7}-\d{2}\.\d{4}\.\d{1,2}\.\d{2}\.\d{4}"
-    match_processo = re.search(padrao_processo, texto_bruto)
-    n_processo = match_processo.group(0) if match_processo else None
-    
-    
-    # 2. Tipo de Processo
-    tipo_processo = "Trabalhista" if "TRT" in texto_bruto or "Trabalho" in texto_bruto else "Cível"
-    
-    # 3. Tipo de Ação
-    tipo_acao = None
-    match_acao = re.search(r"ação de\s+([^\(]+?)\s*\(?processo", texto_bruto, re.IGNORECASE)
-    if match_acao:
-        tipo_acao = match_acao.group(1).strip()
+        # 1) Número do processo
+    padrao_n_processo = r"\d{7}-\d{2}\.\d{4}\.\d{1,2}\.\d{2}\.\d{4}"
+    match_n_processo = re.search(padrao_n_processo, texto_bruto)
+    numero_processo =  match_n_processo.group(0) if match_n_processo else None
 
-    # 4. Partes (Acusador/Acusado - Autor/Réu)
-    autor, reu = None, None
-    match_partes = re.search(r"movida por\s+(.+?)\s+em face de\s+(.+?),", texto_bruto, re.IGNORECASE)
-    if match_partes:
-        autor = match_partes.group(1).strip()
-        reu = match_partes.group(2).strip()
+        # 2) Nome do cliente (Reclamante ou Autor/Autora)
+    padrao_nome_cliente = r"(?:Reclamante|Autor(?:a)?)\s+([A-Za-z][A-Za-z\s\-]+?)(?:,|e|\.|\n|$)"   #inclui tanto os nomes todo maiúsculo quanto com letras minúsculas tbm
+    match_nome_cliente = re.search(padrao_nome_cliente , texto_bruto, re.IGNORECASE)
+    nome_cliente = match_nome_cliente.group(1).strip() if match_nome_cliente else ''   #caso nn ache nome, retorna uma string vazia
         
-    # 5. Advogado e OAB
-    advogado, oab = None, None
-    match_adv = re.search(r"Dra?\.\s+([^,]+),\s+inscrita.*?OAB.*?nº\s+([\d\.]+)", texto_bruto, re.IGNORECASE)
-    if match_adv:
-        advogado = match_adv.group(1).strip()
-        oab = match_adv.group(2).strip()
-        
-    # 6. Decisão e Valores (Deferido/Indeferido/Parcial)
-    resultado_julgamento = None
-    match_resultado = re.search(r"julgando\s+(PROCEDENTES|IMPROCEDENTES|PARCIALMENTE PROCEDENTES)", texto_bruto, re.IGNORECASE)
-    if match_resultado:
-        resultado_julgamento = match_resultado.group(1).upper()
-        
-    # Captura todos os valores em Reais (R$) encontrados no documento
-    valores = re.findall(r"R\$\s*[\d\.]+,[\d]{2}", texto_bruto)
-
-    # 7. Data de Expedição
-    data_expedicao = None
-    match_data = re.search(r"Recife,\s+([\d]{1,2}\s+de\s+[a-zA-Z]+\s+de\s+[\d]{4})", texto_bruto, re.IGNORECASE)
-    if match_data:
-        data_expedicao = match_data.group(1).strip()
+        # 3) Nome de quem está sendo processado (Reclamada ou Réu)
+    padrao_nome_processado = r"(?:Reclamada|Réu)\s+([A-Za-z][A-Za-z\s\-\.]{1,}(?:LTDA\.|S/A)?)(?:,|e|\.|\n|$)"
+    match_nome_processado = re.search(padrao_nome_processado , texto_bruto, re.IGNORECASE)
+    nome_processado = match_nome_processado.group(1).strip() if match_nome_processado else ''   
     
-    tribunal_vara = None
-    match_tribunal = re.search(r"(?:COMARCA DE.+?|PODER JUDICIÁRIO.+?)\s+([^\n]+Vara[^\n]+|[^\n]+Turma[^\n]+)", texto_bruto, re.IGNORECASE)
-    if match_tribunal:
-        tribunal_vara = match_tribunal.group(1).strip()
+        # 4) Nome dos Advogados 
+    padrao_advogados = r"((?:Dr\.|Dra\.)\s+[^,\(\s\n]+(?:\s+[^,\(\s\n]+)*)(?:[^,]*?((?:Dr\.|Dra\.)\s+[^,\(\s\n]+(?:\s+[^,\(\s\n]+)*))?"
+    match_advogado = re.search(padrao_advogados, texto_bruto, re.IGNORECASE)
+    nome_adv_cliente = match_advogado.group(1).strip() if match_advogado and match_advogado.group(1) else None  #pega o primeiro nome encontrado
+    nome_adv_processado = match_advogado.group(2).strip() if match_advogado and match_advogado.group(2) else None   #pega o segundo nome encontrado
+
+
+        # 6) OAB dos  advogados
+    padrao_oab_advogados = r"(OAB/[A-Z]{2}\s+[\d\.]+)(?:[^,]*?(OAB/[A-Z]{2}\s+[\d\.]+))?"
+    match_oab_advogado = re.search(padrao_oab_advogados, texto_bruto, re.IGNORECASE)
+
+    oab_adv_cliente = None
+    oab_adv_processado = None
+
+    if match_oab_advogado:
+        if match_oab_advogado.group(1):
+            oab_adv_cliente = match_oab_advogado.group(1)   #pega a primeira oab encontrada
+        if match_oab_advogado.group(2):
+            oab_adv_processado = match_oab_advogado.group(2)  #pega a segunda oab encontrada
+
+    # se o nome de um advogado não for encontrado, a OAB será None
+    if not nome_adv_cliente:
+        oab_adv_cliente = None
+    if not nome_adv_processado:
+        oab_adv_processado = None
+
+        # 8) Valor total a ser pago
+    padrao_valor_total = r"valor de\s*(R\$\s*[\d\.,]+)"
+    match_valor = re.search(padrao_valor_total, texto_bruto)
+    valor_total_acordo = match_valor.group(1) if match_valor else ''
+
+        # 9) Tipo do processo
+    if "TRT" in texto_bruto or "reclamant" in texto_bruto.lower() or "Trabalho" in texto_bruto:
+        tipo_processo = "Trabalhista"
+    else:
+        tipo_processo = "Cível"
+
+        # 10) Vara do processo
+    tipo_vara = None
+    padrao_vara = r"(\d+ª\s+Vara\s+(Cível | Trabalhista)\s+de\s+Recife)"
+    match_vara = re.search(padrao_vara, texto_bruto, re.IGNORECASE)
+    if match_vara:
+        tipo_vara = match_vara.group(1).strip()
+
 
     return {
         "arquivo_origem": nome_arquivo,
-        "tribunal_vara": tribunal_vara,
-        "tipo_documento": "intimacao",
-        "tipo_processo": tipo_processo,
-        "n_processo": n_processo,
-        "acusando_autor": autor,
-        "acusado_reu": reu,
-        "nome_advogado": advogado,
-        "oab_advogado": oab,
-        "valores_condenacao": valores if valores else None,
-        "data_expedicao": data_expedicao,
-        "texto_bruto": texto_bruto
+        "tipo_documento": "acordo",
+        "texto_bruto": texto_bruto,
+        "n_processo" : numero_processo,
+        "acusando_autor" : nome_cliente,
+        "acusado_reu" : nome_processado,
+        "nome_advogado" : nome_adv_cliente,
+        "nome_advogado_reu" : nome_adv_processado,
+        "oab_advogado" : oab_adv_cliente,
+        "oab_advogado_reu" : oab_adv_processado,
+        "valor_total_acordo" : valor_total_acordo,
+        "tipo_processo" :tipo_processo,
+        "tribunal_vara" : tipo_vara
+
     }
     
 
-
-    ''''
-    Número do processo      OK
-Unidade (qual vara ou  juizado)
-Partes (e consequentemente os patronos, ou seja, os advogados)
-Valor da causa (se tiver no acordo, mas é parte importante do processo, então já deixa anotado caso tenha outra atividade dessa)
-Objeto do processo 
-Valores que serão pagos e condições de pagamento
-    '''
->>>>>>> extracao_acordos
