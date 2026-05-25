@@ -1,26 +1,32 @@
 import sys
 from pathlib import Path
+import json
 
-# usa o endereço da pasta atual para encontrar a pasta que ela está contida, assim encontra o modulo database_model
+# usa o endereço da pasta atual para encontrar a pasta que ela está contida
 pasta_bd = Path(__file__).parent.parent
 sys.path.append(str(pasta_bd))
 
-import json
 from database_model import SessionLocal
 from model_Cliente import Cliente
 
-def carregar_clientes_do_json(pasta_jsons: Path):
+def carregar_clientes_do_json(pasta_base_jsons: Path):
     #abre o Banco
     db = SessionLocal()
 
     try:
-        # rastreia os arquivos json na pasta
-        for arquivo in pasta_jsons.glob("*.json"):
+        
+        for arquivo in pasta_base_jsons.rglob("*.json"):
+            # Ignora o arquivo de relatório unificado para não dar erro
+            if arquivo.name == "Relatorio_Geral_Contratos.json":
+                continue
+
             with open(arquivo, "r", encoding="utf-8") as f:
                 dados = json.load(f)
 
-            # A tabela Clientes exige CPF. Se o JSON não tiver, pula para o prox pdf
-            cpf = dados.get("cpf_citado")
+            
+            cpf = dados.get("cpf_cnpj")
+            
+            #A tabela Clientes exige CPF. Se o JSON não tiver, pula para o prox pdf
             if not cpf:
                 continue
 
@@ -29,12 +35,12 @@ def carregar_clientes_do_json(pasta_jsons: Path):
 
             if not cliente_existente:
                 novo_cliente = Cliente(
-                nome=dados.get("nome_citado"),
-                cpf_cnpj=cpf,
-                nacionalidade=dados.get("nacionalidade"),
-                estado_civil=dados.get("estado_civil"),
-                ocupacao=dados.get("ocupacao"),
-                endereco_completo=dados.get("endereco_completo")
+                    nome=dados.get("nome_cliente"), 
+                    cpf_cnpj=cpf,
+                    nacionalidade=dados.get("nacionalidade"),
+                    estado_civil=dados.get("estado_civil"),
+                    ocupacao=dados.get("ocupacao"),
+                    endereco_completo=dados.get("endereco_completo")
                 )
                 # Adiciona ao banco
                 db.add(novo_cliente)
@@ -43,13 +49,15 @@ def carregar_clientes_do_json(pasta_jsons: Path):
         db.commit()
 
     except Exception as e:
-        # Se der qualquer erro crítico, desfaz tudo que estava na base
         db.rollback()
+        print(f"Erro ao inserir dados: {e}")
     finally:
-    #sempre finaliza a conexão com o banco após cada inserção
         db.close()
 
 if __name__ == "__main__":
-    pasta_base = Path(__file__).parent.parent.parent.parent
-    pasta_jsons_citacao = pasta_base / "data" / "Texto_json" / "citacao"
-    carregar_clientes_do_json(pasta_jsons_citacao)
+    # ALTERAÇÃO 4: Apontamos para a pasta raiz dos JSONs, e não apenas para "citacao"
+    pasta_raiz = Path(__file__).parent.parent.parent.parent
+    pasta_todos_jsons = pasta_raiz / "data" / "Texto_json"
+    
+    carregar_clientes_do_json(pasta_todos_jsons)
+   

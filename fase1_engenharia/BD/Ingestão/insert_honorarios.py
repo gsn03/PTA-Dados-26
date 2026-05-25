@@ -32,8 +32,8 @@ def carregamento_honorarios_json(pasta_jsons: Path): #Essa função faz com que 
                 novo_contrato = contrato_honorario(
                     arquivo_origem=nome_arquivo,
                     tipo_processo=dados.get("tipo_processo"),
-                    contratante=dados.get("contratante"),
-                    cpf_cnpj_contratante=dados.get("cpf_cnpj_contratante"),
+                    contratante=dados.get("nome_cliente"),
+                    cpf_cnpj_contratante=dados.get("cpf_cnpj"),
                     nome_advogado=dados.get("nome_advogado"),
                     oab_advogado=dados.get("oab_advogado"),
                     endereco_encontrado=dados.get("endereco_encontrado"),
