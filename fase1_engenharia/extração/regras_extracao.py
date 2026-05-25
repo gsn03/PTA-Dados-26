@@ -173,6 +173,11 @@ def extrair_peticao(texto_bruto: str, nome_arquivo: str) -> dict:
     padrao_valorcausa = r"valor de\s*(R\$\s*[\d\.,]+)"#Pega o valor final, garante que seja o valor da cusa especificamente
     match_valor = re.findall(padrao_valorcausa, texto_bruto, re.IGNORECASE)
     valor_encontrado = match_valor[-1].strip() if match_valor else None
+        #Advogado e OAB
+    padrao_advogado = r"([^\n\|]+?)\s*\|\s*(OAB/[A-Z]{2}\s*[\d\.]+)"
+    match_advogado = re.search(padrao_advogado, texto_bruto, re.IGNORECASE)
+    advogado_encontrado = match_advogado.group(1).strip() if match_advogado else None
+    oab_encontrada = match_advogado.group(2).strip() if match_advogado else None
 
     return {
         "arquivo_origem": nome_arquivo,
@@ -182,5 +187,7 @@ def extrair_peticao(texto_bruto: str, nome_arquivo: str) -> dict:
         "reclamada": reclamada_encontrado,
         "tipo_acao": acao_encontrada,
         "valor_causa": valor_encontrado,
+        "advogado": advogado_encontrado,
+        "oab_advogado": oab_encontrada,
         "texto_bruto": texto_bruto
     }

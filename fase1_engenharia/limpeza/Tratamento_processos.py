@@ -144,7 +144,7 @@ def pipeline_Tratamento_Processos (caminho_entrada, caminho_saida):
   #substituindo o mes por extenso para numeros
   for antigo, novo in mapa_mes.items(): #reutiliza o mapa_mes
       df_processos['prazo_proximo'] = df_processos['prazo_proximo'].str.replace(antigo, novo, regex=False)
-
+      
 
   df_processos['prazo_proximo'] = pd.to_datetime(df_processos['prazo_proximo'], dayfirst=True, format='mixed')
   df_processos['prazo_proximo'] = df_processos['prazo_proximo'].dt.strftime('%Y-%m-%d')

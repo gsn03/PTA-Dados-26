@@ -37,6 +37,10 @@ def extrair_contrato_honorarios(texto_bruto, nome_arquivo):
 
     # 4. Contratante e CPF/CNPJ
     match_partes = re.search(r"(?:Contratante|CLIENTE):\s*([^,]+),\s*(?:CPF|CNPJ)\s*([\d\.\-/]+)", texto_bruto, re.IGNORECASE)
+
+    #Alteração - agora com nome do(a) advogado(a)
+    match_advogado = re.search(r"Dra\.\s*([^\n,]+)", texto_bruto, re.IGNORECASE)
+    advogado_encontrado = match_advogado.group(1).strip() if match_advogado else "Não encontrado"
     
     # 5. Valor do Contrato
     match_valor = re.search(r"(?:total de|Valor fixo:)\s*(R\$\s*[\d\.,]+)", texto_bruto, re.IGNORECASE)
@@ -50,6 +54,7 @@ def extrair_contrato_honorarios(texto_bruto, nome_arquivo):
         "tipo_processo": tipo_processo,
         "contratante": match_partes.group(1).strip() if match_partes else "Não encontrado",
         "cpf_cnpj_contratante": match_partes.group(2).strip() if match_partes else None,
+        "nome_advogado": advogado_encontrado,
         "oab_advogado": oab_encontrada,
         "endereco_encontrado": endereco,
         "valor_total": match_valor.group(1).strip() if match_valor else None,
