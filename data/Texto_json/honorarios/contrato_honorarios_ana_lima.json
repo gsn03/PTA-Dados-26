@@ -2,11 +2,14 @@
     "arquivo_origem": "contrato_honorarios_ana_lima.pdf",
     "tipo_documento": "contrato_honorarios",
     "tipo_processo": "Cível",
-    "contratante": "Não encontrado",
-    "cpf_cnpj_contratante": null,
+    "nome_cliente": null,
+    "cpf_cnpj": null,
+    "nacionalidade": null,
+    "estado_civil": null,
+    "ocupacao": null,
+    "endereco_completo": "Rua dos",
     "nome_advogado": "Fernanda Melo",
     "oab_advogado": "PE 12.345",
-    "endereco_encontrado": "Rua dos",
-    "valor_total": null,
+    "valor_total_honorarios": null,
     "honorarios_exito": null
 }
