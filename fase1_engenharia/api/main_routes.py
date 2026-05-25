@@ -11,6 +11,6 @@ app = FastAPI(title="API PTA Dados | Equipe Gustavo")
 
 #Assim que terminatem de fazer a rota, no arquivo routes____.py façam o mesmo que a mesma coisa do router_cliente
 app.include_router(router_cliente) #    <------------
-
+app.include_router(router_processo)
 
 
