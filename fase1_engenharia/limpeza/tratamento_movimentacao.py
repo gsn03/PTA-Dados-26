@@ -9,7 +9,7 @@ caminho_bruto = basedir / "data" / "Planilhas_sem_tratamento" / "movimentacoes.c
 caminho_tratado = basedir / "data" / "Bases_Tratadas" / "Movimentacoes_tratado.csv"
 
 
-def pipeline_movimentacao(df):
+def pipeline_movimentacao( caminho_bruto, caminho_tratado):
     df = pd.read_csv(caminho_bruto, sep=',', encoding='utf-8')
 
     # função para parsing de datas
@@ -101,27 +101,13 @@ def pipeline_movimentacao(df):
     ]
 
     for col in colunas_data:
-        df[col] = df[col].dt.strftime('%Y-%m-%d')
+        # O errors='coerce' garante que o que não é data vira NaT (Nulo)
+        df_export[col] = pd.to_datetime(df_export[col], errors='coerce').dt.strftime('%Y-%m-%d')
 
-    df["prazo_gerado"] = df["prazo_gerado"].fillna("Sem prazo")
-    df["data_movimentacao"] = df["data_movimentacao"].fillna("Sem data")
-    df["data_descricao"] = df["data_descricao"].fillna("Sem data")
-    df["prazo_final"] = df["prazo_final"].fillna("Sem prazo final")
+    # REMOVIDAS AS LINHAS QUE PREENCHIAM COM "Sem data" e "Sem prazo"
+    # Deixamos o pandas exportar os valores vazios naturalmente como nulos.
 
-    caminho_tratado.parent.mkdir(parents=True, exist_ok=True)
-
-    df.to_csv(
-        caminho_tratado,
-        sep=';',
-        index=False,
-        encoding='utf-8-sig'
-    )
-
-
-tabela_movimentacao = pd.read_csv(
-    caminho_bruto,
-    sep=',',
-    encoding='utf-8'
-)
-
-pipeline_movimentacao(tabela_movimentacao)
+    # Exporta com vírgula para manter o padrão das outras tabelas
+    df_export.to_csv(caminho_tratado, sep=',', index=False, encoding='utf-8')
+    
+pipeline_movimentacao(caminho_bruto, caminho_tratado)
