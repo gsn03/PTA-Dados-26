@@ -161,8 +161,11 @@ def pipeline_Tratamento_Processos (caminho_entrada, caminho_saida):
 
   # EXPORTAÇÃO
   df_processos.to_csv(caminho_saida, index=False, sep=',', encoding='utf-8')
-#BAIXANDO A BASE DE DADOS TRATADA
-  df_processos.to_csv(caminho_saida, index = False)
+  # Descobre o nome real das colunas no terminal
+  #coluna_certa = 'substitua_pelo_nome_que_aparecer_no_print'
+
+ # total_duplicados = df_processos["numero_processo"].duplicated().sum()
+  #print(f"Quantidade de processos com números duplicados: {total_duplicados}")
 
 
 
