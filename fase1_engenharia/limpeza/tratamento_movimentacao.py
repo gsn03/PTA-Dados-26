@@ -10,7 +10,7 @@ caminho_bruto = basedir / "data" / "Planilhas_sem_tratamento" / "movimentacoes.c
 caminho_tratado = basedir / "data" / "Bases_Tratadas" / "Movimentacoes_tratado.csv"
 
 
-def pipeline_movimentacao(df):
+def pipeline_movimentacao(caminho_bruto, caminho_tratado):
     df = pd.read_csv(caminho_bruto, sep=',', encoding='utf-8')
 
     # função para parsing de datas
@@ -112,16 +112,10 @@ def pipeline_movimentacao(df):
 
     df.to_csv(
         caminho_tratado,
-        sep=';',
+        sep=',',
         index=False,
         encoding='utf-8-sig'
     )
 
 
-tabela_movimentacao = pd.read_csv(
-    caminho_bruto,
-    sep=',',
-    encoding='utf-8'
-)
-
-pipeline_movimentacao(tabela_movimentacao)
+pipeline_movimentacao(caminho_bruto, caminho_tratado)
