@@ -150,8 +150,18 @@ def pipeline_Tratamento_Processos (caminho_entrada, caminho_saida):
   df_processos['prazo_proximo'] = df_processos['prazo_proximo'].dt.strftime('%Y-%m-%d')
 
   df_processos['prazo_proximo'] = df_processos['prazo_proximo'].fillna('Sem prazo delimitado') #preenche os nulos com 'Sem prazo delimitado'
+# FORÇANDO TIPAGEM DE DADOS (Type Casting)
 
-  #BAIXANDO A BASE DE DADOS TRATADA
+  # 1. Transforma tudo que não for número no valor_causa em NaN
+  df_processos['valor_causa'] = pd.to_numeric(df_processos['valor_causa'], errors='coerce')
+  
+  # 2. Transforma tudo que não for data válida no prazo_proximo em NaT
+  df_processos['prazo_proximo'] = pd.to_datetime(df_processos['prazo_proximo'], errors='coerce')
+  df_processos['prazo_proximo'] = df_processos['prazo_proximo'].dt.strftime('%Y-%m-%d')
+
+  # EXPORTAÇÃO
+  df_processos.to_csv(caminho_saida, index=False, sep=',', encoding='utf-8')
+#BAIXANDO A BASE DE DADOS TRATADA
   df_processos.to_csv(caminho_saida, index = False)
 
 

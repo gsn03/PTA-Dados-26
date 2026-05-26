@@ -107,7 +107,6 @@ def pipeline_movimentacao(df):
     df["prazo_final"] = df["prazo_final"].fillna(pd.NaT)
     
     df = df.drop(columns=["dias_recurso", "prazo_fatal", "prazo_recurso_calc"])
-    print(df.head(10))
 
     caminho_tratado.parent.mkdir(parents=True, exist_ok=True)
 
