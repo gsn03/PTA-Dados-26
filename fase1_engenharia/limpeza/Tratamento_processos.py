@@ -147,7 +147,9 @@ def pipeline_Tratamento_Processos (caminho_entrada, caminho_saida):
       
 
   df_processos['prazo_proximo'] = pd.to_datetime(df_processos['prazo_proximo'], dayfirst=True, format='mixed')
-  df_processos['prazo_proximo'] = df_processos['prazo_proximo'].dt.strftime('%Y-%m-%d')
+  df_processos['prazo_proximo'] = df_processos['prazo_proximo'].dt.strftime('%Y-%m-%d') #transforma para string com formato de ANO/MES/DIA
+  df_processos['data_abertura'] = pd.to_datetime(df_processos['data_abertura'], errors='coerce') #tranforma de string para datetime
+
 
   df_processos['prazo_proximo'] = df_processos['prazo_proximo'].fillna('Sem prazo delimitado') #preenche os nulos com 'Sem prazo delimitado'
 # FORÇANDO TIPAGEM DE DADOS (Type Casting)
@@ -157,7 +159,9 @@ def pipeline_Tratamento_Processos (caminho_entrada, caminho_saida):
   
   # 2. Transforma tudo que não for data válida no prazo_proximo em NaT
   df_processos['prazo_proximo'] = pd.to_datetime(df_processos['prazo_proximo'], errors='coerce')
-  df_processos['prazo_proximo'] = df_processos['prazo_proximo'].dt.strftime('%Y-%m-%d')
+  df_processos['prazo_proximo'] = df_processos['prazo_proximo'].dt.strftime('%Y-%m-%d') #transforma para string com formato de ANO/MES/DIA
+  df_processos['prazo_proximo'] = pd.to_datetime(df_processos['prazo_proximo'], errors='coerce') #tranforma de string para datetime
+
 
   # EXPORTAÇÃO
   df_processos.to_csv(caminho_saida, index=False, sep=',', encoding='utf-8')
