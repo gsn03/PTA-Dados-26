@@ -1,89 +1,95 @@
 import sys
 from pathlib import Path
-import json
+import pandas as pd
+import numpy as np
 
 # 1. Ajuste de caminhos no topo
-pasta_bd = Path(__file__).parent.parent
+pasta_bd = Path(__file__).resolve().parent.parent
 sys.path.append(str(pasta_bd))
 
 from database_model import SessionLocal
 from model_honorarios import contrato_honorario
+from model_Cliente import Cliente
 
-def carregar_honorarios_json(pasta_jsons: Path):
+# FUNÇÃO HIGIENIZADORA: Destrói qualquer variação de NaN/Vazio e transforma em None
+def limpar_dado(valor):
+    if pd.isna(valor): 
+        return None
+    if str(valor).strip().lower() in ["nan", "nat", "none", ""]: 
+        return None
+    return valor
+
+def carregar_honorarios_csv(caminho_honorarios: Path, caminho_clientes: Path):
     db = SessionLocal()
     
     try:
-        # Usa rglob para varrer Contratos, Petições, Acordos e Intimações
-        for arquivo in pasta_jsons.rglob("*.json"): 
-            if "Relatorio" in arquivo.name:
+        print("Lendo bases de dados financeiras...")
+        df_honorarios = pd.read_csv(caminho_honorarios, sep=",", encoding="utf-8")
+        df_clientes = pd.read_csv(caminho_clientes, sep=",", encoding="utf-8")
+        
+        # 1. DESARMANDO DUPLICATAS DA PLANILHA (Remove linhas idênticas ignorando honorario_id)
+        qtd_antes = len(df_honorarios)
+        colunas_verificacao = [col for col in df_honorarios.columns if col != "honorario_id"]
+        df_honorarios = df_honorarios.drop_duplicates(subset=colunas_verificacao, keep="first")
+        qtd_depois = len(df_honorarios)
+        if qtd_antes > qtd_depois:
+            print(f"Duplicatas removidas: {qtd_antes - qtd_depois} linhas ignoradas.")
+        
+        # 2. MAPEAMENTO DE CHAVES ESTRANGEIRAS
+        mapa_clientes_csv = df_clientes.set_index("cliente_id")["cpf"].to_dict()
+        
+        honorarios_inseridos = 0
+        honorarios_ignorados = 0
+        
+        print("Iniciando inserção no banco de dados...")
+        for index, row in df_honorarios.iterrows():
+            
+            numero = limpar_dado(row.get("numero_processo"))
+            id_csv = row.get("cliente_id")
+            cpf_cliente = mapa_clientes_csv.get(id_csv)
+            
+            if not cpf_cliente:
                 continue
-                
-            with open(arquivo, "r", encoding="utf-8") as f:
-                dados = json.load(f)
-            
-            # 2. Mapeamento Inteligente: Chaves antigas vs padronizadas
-            cpf_extraido = dados.get("cpf_cnpj") or dados.get("cpf_cnpj_contratante")
-            nome_extraido = dados.get("nome_cliente") or dados.get("contratante") or dados.get("acusando_autor") or dados.get("reclamante")
-            
-            # Se o documento não tiver CPF nem Nome, não conseguimos vincular
-            if not cpf_extraido and not nome_extraido:
+
+            # Busca o cliente real no banco
+            cliente_db = db.query(Cliente).filter(Cliente.cpf_cnpj == cpf_cliente).first()
+            if not cliente_db:
                 continue
 
-            # Unifica outras informações
-            endereco_extraido = dados.get("endereco_completo") or dados.get("endereco_encontrado")
-            oab_extraida = dados.get("oab_advogado") or dados.get("oab_advogado_reu")
-            adv_extraido = dados.get("nome_advogado") or dados.get("advogado")
-
-            # Mapeia os valores dependendo do tipo de documento
-            valor_causa = dados.get("valor_causa")
-            valor_acordo = dados.get("valor_total_acordo") or dados.get("valor_acordo")
+            # Validação de Duplicata no Banco (mesmo cliente e mesmo processo)
+            contrato_existente = db.query(contrato_honorario).filter(
+                contrato_honorario.cliente_id == cliente_db.id,
+                contrato_honorario.numero_processo == numero
+            ).first()
             
-            valores_cond_bruto = dados.get("valores_condenacao") or dados.get("valor_condenacao")
-            valor_cond_tratado = " | ".join(valores_cond_bruto) if isinstance(valores_cond_bruto, list) else valores_cond_bruto
+            if contrato_existente:
+                honorarios_ignorados += 1
+                continue
 
-            # 3. Procura se o contrato já existe na base (por CPF ou Nome)
-            contrato_existente = None
-            if cpf_extraido:
-                contrato_existente = db.query(contrato_honorario).filter(contrato_honorario.cpf_cnpj_contratante == cpf_extraido).first()
-            if not contrato_existente and nome_extraido:
-                contrato_existente = db.query(contrato_honorario).filter(contrato_honorario.contratante.ilike(f"%{nome_extraido}%")).first()
-
-            if not contrato_existente:
-                # SÓ cria uma nova linha na tabela se o ficheiro lido for efetivamente um contrato.
-                # (Isso impede que uma petição crie um contrato fantasma vazio)
-                if dados.get("tipo_documento") == "contrato_honorarios":
-                    novo_contrato = contrato_honorario(
-                        arquivo_origem=dados.get("arquivo_origem"),
-                        tipo_processo=dados.get("tipo_processo"),
-                        contratante=nome_extraido,
-                        cpf_cnpj_contratante=cpf_extraido,
-                        nome_advogado=adv_extraido,
-                        oab_advogado=oab_extraida,
-                        endereco_encontrado=endereco_extraido,
-                        valor_total=dados.get("valor_total_honorarios") or dados.get("valor_total"),
-                        honorarios_exito=dados.get("honorarios_exito"),
-                        valor_causa=valor_causa,
-                        valor_acordo=valor_acordo,
-                        valor_condenacao=valor_cond_tratado
-                    )
-                    db.add(novo_contrato)
-            else:
-                # 4. SMART UPDATE: Se o contrato já existe, atualizamos a linha com os valores dos outros processos!
-                if not contrato_existente.valor_causa and valor_causa:
-                    contrato_existente.valor_causa = valor_causa
-                if not contrato_existente.valor_acordo and valor_acordo:
-                    contrato_existente.valor_acordo = valor_acordo
-                if not contrato_existente.valor_condenacao and valor_cond_tratado:
-                    contrato_existente.valor_condenacao = valor_cond_tratado
-                
-                # Conserta dados de qualificação caso o contrato inicial estivesse incompleto
-                if not contrato_existente.cpf_cnpj_contratante and cpf_extraido:
-                    contrato_existente.cpf_cnpj_contratante = cpf_extraido
-                if not contrato_existente.endereco_encontrado and endereco_extraido:
-                    contrato_existente.endereco_encontrado = endereco_extraido
+            # 3. CRIAÇÃO COM HIGIENIZAÇÃO LINHA A LINHA
+            novo_honorario = contrato_honorario(
+                cliente_id=cliente_db.id,
+                numero_processo=numero,
+                valor_total_contratado=str(limpar_dado(row.get("valor_total_contratado"))),
+                n_parcelas=str(limpar_dado(row.get("n_parcelas"))),
+                parcelas_pagas=str(limpar_dado(row.get("parcelas_pagas"))),
+                valor_pago=str(limpar_dado(row.get("valor_pago"))),
+                valor_em_aberto=str(limpar_dado(row.get("valor_em_aberto"))),
+                data_contrato=limpar_dado(row.get("data_contrato")),
+                data_vencimento=limpar_dado(row.get("data_vencimento")),
+                forma_pagamento=limpar_dado(row.get("forma_pagamento")),
+                honorarios_exito=limpar_dado(row.get("honorario_exito")), # Repare na diferença do 's' final
+                percentual_exito=str(limpar_dado(row.get("percentual_exito"))),
+                status_pagamento=limpar_dado(row.get("status_pagamento"))
+            )
+            
+            db.add(novo_honorario)
+            honorarios_inseridos += 1
 
         db.commit()
-        print("Ingestão de HONORÁRIOS concluída com sucesso!")
+        print(f"\n--- RESUMO DA INGESTÃO DE HONORÁRIOS ---")
+        print(f"Contratos inseridos: {honorarios_inseridos}")
+        print(f"Contratos ignorados (já existiam no banco): {honorarios_ignorados}")
         
     except Exception as e:
         db.rollback()
@@ -93,9 +99,10 @@ def carregar_honorarios_json(pasta_jsons: Path):
 
 if __name__ == "__main__":
     raiz_projeto = Path(__file__).resolve().parent.parent.parent.parent
-    pasta_jsons_principal = raiz_projeto / "data" / "Texto_json"
+    caminho_csv_honorarios = raiz_projeto / "data" / "Bases_Tratadas" / "Honorarios_Tratados.csv"
+    caminho_csv_clientes = raiz_projeto / "data" / "Bases_Tratadas" / "Clientes_Tratados.csv"
     
-    if not pasta_jsons_principal.exists():
-        print(f"A pasta {pasta_jsons_principal} não existe")
+    if not caminho_csv_honorarios.exists() or not caminho_csv_clientes.exists():
+        print(f"ERRO: Verifique se os ficheiros CSV existem na pasta.")
     else:
-        carregar_honorarios_json(pasta_jsons_principal)
+        carregar_honorarios_csv(caminho_csv_honorarios, caminho_csv_clientes)

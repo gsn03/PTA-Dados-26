@@ -1,118 +1,117 @@
 import sys
 from pathlib import Path
-import json
-import re # Nova importação para manipular textos
+import pandas as pd
+import numpy as np
 
-# 1. Ajuste de caminhos 
-pasta_bd = Path(__file__).parent.parent
+# 1. Ajuste de caminhos no topo
+pasta_bd = Path(__file__).resolve().parent.parent
 sys.path.append(str(pasta_bd))
 
-# 2. Importações do Banco de Dados
 from database_model import SessionLocal
-from model_Cliente import Cliente
 from model_processos import Processo
+from model_Cliente import Cliente
 
-def limpar_valor_monetario(valor):
-    if valor is None or valor == "": return None
-    if isinstance(valor, (int, float)): return float(valor)
-    valor_limpo = valor.replace("R$", "").replace(".", "").replace(",", ".").strip()
-    try:
-        return float(valor_limpo)
-    except ValueError:
+# FUNÇÃO HIGIENIZADORA: Destrói qualquer variação de NaN/Vazio e transforma em None
+def limpar_dado(valor):
+    if pd.isna(valor): 
         return None
-
-# NOVA FUNÇÃO: Tradutor de datas para o padrão do PostgreSQL
-def formatar_data(texto_data):
-    if not texto_data:
+    if str(valor).strip().lower() in ["nan", "nat", "none", ""]: 
         return None
-    
-    texto_lower = str(texto_data).lower().strip()
-    meses = {
-        "janeiro": "01", "fevereiro": "02", "março": "03", "marco": "03",
-        "abril": "04", "maio": "05", "junho": "06",
-        "julho": "07", "agosto": "08", "setembro": "09",
-        "outubro": "10", "novembro": "11", "dezembro": "12"
-    }
-    
-    # Tenta encontrar o padrão "05 de fevereiro de 2026"
-    match_extenso = re.search(r"(\d{1,2})\s+de\s+([a-zç]+)\s+de\s+(\d{4})", texto_lower)
-    if match_extenso:
-        dia = match_extenso.group(1).zfill(2)
-        mes = meses.get(match_extenso.group(2))
-        ano = match_extenso.group(3)
-        if mes:
-            return f"{ano}-{mes}-{dia}" # Retorna no formato YYYY-MM-DD
-            
-    # Tenta encontrar o padrão numérico "15/01/2025"
-    match_barras = re.search(r"(\d{2})/(\d{2})/(\d{4})", texto_lower)
-    if match_barras:
-        return f"{match_barras.group(3)}-{match_barras.group(2)}-{match_barras.group(1)}"
-        
-    # Se for um texto ilegível para o banco, devolve nulo para não causar erro
-    return None
+    return valor
 
-def carregar_processos_do_json(pasta_jsons: Path):
+def carregar_processos_csv(caminho_processos: Path, caminho_clientes: Path):
     db = SessionLocal()
     
     try:
-        for arquivo in pasta_jsons.rglob("*.json"):
-            if "Relatorio" in arquivo.name:
-                continue
-
-            with open(arquivo, "r", encoding="utf-8") as f:
-                dados = json.load(f)
-
-            num_proc = dados.get("numero_processo") or dados.get("n_processo")
-            if not num_proc:
-                continue
-
-            existe = db.query(Processo).filter(Processo.numero_processo == num_proc).first()
-            if existe:
-                continue
-
-            cliente_encontrado = None
-            cpf_extraido = dados.get("cpf_cnpj")
-            nome_extraido = dados.get("nome_cliente") or dados.get("acusando_autor") or dados.get("reclamante")
-
-            if cpf_extraido:
-                cliente_encontrado = db.query(Cliente).filter(Cliente.cpf_cnpj == cpf_extraido).first()
+        print("Lendo bases de dados...")
+        df_processos = pd.read_csv(caminho_processos, sep=",", encoding="utf-8")
+        df_clientes = pd.read_csv(caminho_clientes, sep=",", encoding="utf-8")
+        
+        # 1. DESARMANDO A BOMBA DE DUPLICATAS (Nova Regra)
+        qtd_antes = len(df_processos)
+        colunas_verificacao = [col for col in df_processos.columns if col != "processo_id"]
+        df_processos = df_processos.drop_duplicates(subset=colunas_verificacao, keep="first")
+        qtd_depois = len(df_processos)
+        print(f"Duplicatas removidas: {qtd_antes - qtd_depois} linhas ignoradas.")     
+           
+        # 2. MAPEAMENTO DE CHAVES ESTRANGEIRAS
+        mapa_clientes_csv = df_clientes.set_index("cliente_id")["cpf"].to_dict()
+        
+        processos_inseridos = 0
+        processos_ignorados = 0
+        
+        print("Iniciando inserção no banco de dados...")
+        for index, row in df_processos.iterrows():
+            numero = limpar_dado(row.get("numero_processo"))
             
-            if not cliente_encontrado and nome_extraido:
-                cliente_encontrado = db.query(Cliente).filter(Cliente.nome.ilike(f"%{nome_extraido}%")).first()
-
-            if not cliente_encontrado:
-                print(f"Aviso: Cliente não encontrado para o processo {num_proc}. Ficheiro ignorado.")
+            if not numero:
                 continue
 
-            novo_processo = Processo(
-                arquivo_origem=dados.get("arquivo_origem"), 
-                numero_processo=num_proc,
-                cliente_id=cliente_encontrado.id, 
-                tipo_processo=dados.get("tipo_processo"),
-                fase=dados.get("fase"),
-                status=dados.get("status"),
-                nome_advogado=dados.get("nome_advogado") or dados.get("advogado"),
-                # ATUALIZAÇÃO AQUI: Passando os dados pela função formatadora
-                data_abertura=formatar_data(dados.get("data_abertura") or dados.get("data_expedicao")), 
-                prazo_proximo=formatar_data(dados.get("prazo_proximo") or dados.get("prazo_contestacao")),
-                valor_causa=limpar_valor_monetario(dados.get("valor_causa") or dados.get("valor_total_acordo")),
-                vara=dados.get("vara") or dados.get("tribunal_vara"),
-                observacoes=dados.get("observacoes") or dados.get("resultado_julgamento")
-            )
+            # --- VALIDAÇÃO DE HISTÓRICO CORRIGIDA ---
+            fase_limpa = limpar_dado(row.get("fase"))
+            status_limpo = limpar_dado(row.get("status"))
+            
+            proc_existente = db.query(Processo).filter(
+                Processo.numero_processo == numero,
+                Processo.fase == fase_limpa,
+                Processo.status == status_limpo
+            ).first()
+            
+            if proc_existente:
+                processos_ignorados += 1
+                continue
+            # ----------------------------------------
 
+            # --- RECUPERAÇÃO DO CLIENTE CORRIGIDA ---
+            id_csv = row.get("cliente_id")
+            cpf_cliente = mapa_clientes_csv.get(id_csv)
+            
+            if not cpf_cliente:
+                continue
+
+            cliente_db = db.query(Cliente).filter(Cliente.cpf_cnpj == cpf_cliente).first()
+            
+            if not cliente_db:
+                continue
+            # ----------------------------------------
+
+            # 3. CRIAÇÃO COM HIGIENIZAÇÃO LINHA A LINHA
+            valor_causa_limpo = limpar_dado(row.get("valor_causa"))
+            
+            novo_processo = Processo(
+                numero_processo=numero,
+                cliente_id=cliente_db.id,
+                tipo_processo=limpar_dado(row.get("tipo")),
+                fase=fase_limpa,
+                status=status_limpo,
+                nome_advogado=limpar_dado(row.get("advogado_responsavel")),
+                data_abertura=limpar_dado(row.get("data_abertura")),
+                prazo_proximo=limpar_dado(row.get("prazo_proximo")),
+                valor_causa=str(valor_causa_limpo) if valor_causa_limpo else None,
+                vara=limpar_dado(row.get("vara")),
+                observacoes=limpar_dado(row.get("observacoes"))
+            )
+            
             db.add(novo_processo)
+            processos_inseridos += 1
 
         db.commit()
-        print("Ingestão de processos concluída com sucesso!")
-
+        print(f"\n--- RESUMO DA INGESTÃO DE PROCESSOS ---")
+        print(f"Processos inseridos: {processos_inseridos}")
+        print(f"Processos ignorados (já existiam com a mesma fase/status): {processos_ignorados}")
+        
     except Exception as e:
         db.rollback()
-        print(f"Erro crítico na ingestão: {e}")
+        print(f"Erro crítico na ingestão de processos: {e}")
     finally:
         db.close()
 
 if __name__ == "__main__":
-    pasta_raiz = Path(__file__).parent.parent.parent.parent
-    pasta_processos = pasta_raiz / "data" / "Texto_json"
+    raiz_projeto = Path(__file__).resolve().parent.parent.parent.parent
+    caminho_csv_processos = raiz_projeto / "data" / "Bases_Tratadas" / "Processos_Tratados.csv"
+    caminho_csv_clientes = raiz_projeto / "data" / "Bases_Tratadas" / "Clientes_Tratados.csv"
     
-    carregar_processos_do_json(pasta_processos)
+    if not caminho_csv_processos.exists() or not caminho_csv_clientes.exists():
+        print(f"ERRO: Verifique se os arquivos CSV existem na pasta.")
+    else:
+        carregar_processos_csv(caminho_csv_processos, caminho_csv_clientes)
