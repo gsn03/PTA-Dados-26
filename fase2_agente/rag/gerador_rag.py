@@ -1,7 +1,15 @@
+import os
+import sys
+from pathlib import Path
+from dotenv import load_dotenv
+
+pasta_raiz = Path(__file__).parent.parent.parent
+load_dotenv(pasta_raiz / ".env", override=True)
+
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 
-ia_escolhida = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0.2)
+ia_escolhida = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.1, api_key=os.getenv("GOOGLE_API_KEY"))
 
 prompt_rag = ChatPromptTemplate.from_messages([ #Ajustar com a equipe
     ("system", """Você é um assistente jurídico de elite.
