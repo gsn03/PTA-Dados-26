@@ -17,24 +17,29 @@ sys.path.append(str(pasta_bd))
 # Como fluxo.py e gerador_rag.py estão lado a lado, adicionamos a própria pasta rag ao path
 sys.path.append(str(pasta_rag)) 
 
+pasta_grafo = pasta_agente / "grafo"
+sys.path.append(str(pasta_grafo))
+
 from banco_vetorial import buscar_contexto_semantico
 from gerador_rag import gerar_resposta
+from no_reformulacao import reformular_pergunta
 
 def executar_rag(pergunta_usuario: str):
     # Recuperação
-    contexto = buscar_contexto_semantico(pergunta_usuario)
+    pergunta_reformulada = reformular_pergunta(pergunta_usuario)
+    contexto = buscar_contexto_semantico(pergunta_reformulada)
     
     if not contexto.strip():
         return "Nenhum documento relevante encontrado na base."
     
     # Geração
-    resposta_final = gerar_resposta(pergunta_usuario, contexto)
+    resposta_final = gerar_resposta(pergunta_reformulada, contexto)
     
     print("\n--- RESPOSTA FINAL ---")
     return resposta_final
 
 if __name__ == "__main__":
     # Teste 
-    pergunta = "Qual o valor do acordo da Fernanda Costa?"
+    pergunta = "Qual a porcentagem mínima dos honorários baseado nos PDFs?"
     resposta = executar_rag(pergunta)
     print(resposta)
