@@ -42,4 +42,4 @@ def buscar_movimentacoes_por_processo(numero_processo: str, db: Session = Depend
         raise HTTPException(status_code=404, detail="Nenhuma movimentação encontrada para este processo")
        
     return movimentacoes_encontradas
-router = APIRouter(prefix="/movimentações", tags=["Movimentações"])
+
