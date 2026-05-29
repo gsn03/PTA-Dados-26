@@ -2,6 +2,7 @@ import os
 import sys
 from pathlib import Path
 from dotenv import load_dotenv
+import json
 
 pasta_grafo = Path(__file__).resolve().parent          # fase2_agente/grafo
 pasta_fase2 = pasta_grafo.parent                       # fase2_agente
@@ -59,11 +60,9 @@ def executar_no_de_busca(entrada_texto: str) -> str:
     """)
     
     mensagem_usuario = HumanMessage(content=entrada_texto)
-    
     try:
         print(f"[NÓ DE BUSCA] Analisando a entrada: '{entrada_texto}'...")
         
-        # O LLM pensa e decide
         resposta_ia = llm_com_ferramentas.invoke([prompt_sistema, mensagem_usuario])
         
         # CENÁRIO A: A IA decidiu chamar uma ferramenta
@@ -73,25 +72,36 @@ def executar_no_de_busca(entrada_texto: str) -> str:
             argumentos = chamada["args"]
             
             print(f"[NÓ DE BUSCA] Ferramenta escolhida: {nome_ferramenta}")
-            print(f"[NÓ DE BUSCA] Parâmetros extraídos: {argumentos}")
             
-            # Executa a ferramenta Python real com os argumentos que a IA extraiu
+            # Executa a ferramenta
             ferramenta_real = mapa_ferramentas[nome_ferramenta]
             resultado_api = ferramenta_real.invoke(argumentos)
             
-            print(f"[NÓ DE BUSCA] Sucesso! Dados recuperados da API.")
-            return resultado_api
+            # Formata o SUCESSO em JSON
+            resposta_padronizada = {
+                "status": "sucesso",
+                "ferramenta_utilizada": nome_ferramenta,
+                "dados_recuperados": resultado_api
+            }
+            return json.dumps(resposta_padronizada, ensure_ascii=False, indent=2)
             
-        # CENÁRIO B: A IA foi bloqueada pela nossa regra (Ex: Faltou o nome do cliente)
+        # CENÁRIO B: A IA foi bloqueada pela nossa regra de segurança
         else:
-            print("[NÓ DE BUSCA] Nenhuma ferramenta foi acionada (Regra de Validação ou Pergunta Genérica).")
-            return resposta_ia.content
+            print("[NÓ DE BUSCA] Regra de Validação ativada.")
+            resposta_padronizada = {
+                "status": "bloqueio_seguranca",
+                "mensagem_orientacao": resposta_ia.content
+            }
+            return json.dumps(resposta_padronizada, ensure_ascii=False, indent=2)
 
     except Exception as e:
-        erro_msg = f"RESULTADO_SISTEMA: Erro interno no Nó de Busca: {e}"
-        print(erro_msg)
-        return erro_msg
-
+        erro_msg = f"Erro interno no Nó de Busca: {e}"
+        print(f"[NÓ DE BUSCA] {erro_msg}")
+        resposta_padronizada = {
+            "status": "erro_critico",
+            "mensagem_orientacao": erro_msg
+        }
+        return json.dumps(resposta_padronizada, ensure_ascii=False, indent=2)
 # -----------------------------------------------------------------------------
 # ÁREA DE TESTES LOCAIS (Para você testar antes de entregar para o LangGraph)
 # -----------------------------------------------------------------------------
