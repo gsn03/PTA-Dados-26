@@ -24,7 +24,7 @@ class DocumentoVetorial(Base):
 # Configuração dos embeddings
 embeddings_model = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
 
-def buscar_contexto_semantico(pergunta: str, limite: int = 1) -> str:
+def buscar_contexto_semantico(pergunta: str, limite: int = 5) -> str:
     print(f"Buscando PDFs para a pergunta: '{pergunta}'...")
     vetor_pergunta = embeddings_model.embed_query(pergunta)  
     db = SessionLocal()
