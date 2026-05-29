@@ -1,23 +1,34 @@
-# DECISIONS.md
-Documento de decisões técnicas e de arquitetura
-
 # Documento de Decisões Arquiteturais (DECISIONS.md) - Fase 1
 
-Esta seção documenta as principais decisões de estratégias de implementação adotadas na primeira fase do projeto, abrangendo ingestão de dados, processamento de PDFs, estruturação de banco de dados e rotas da API.
+Esta seção documenta as principais decisões de design, ferramentas e estratégias adotadas na primeira fase do projeto, incluindo ingestão de dados, processamento de PDFs, estruturação do banco de dados e rotas da API.
 
 ---
 
 # 1. Frameworks e Tecnologias Base
 
-## API Web
+## API Web: FastAPI
 
-Adotamos o **FastAPI** devido à sua alta performance, tipagem estática nativa (com Pydantic) e facilidade na criação de rotas modulares usando o `APIRouter`.
+Adotamos o **FastAPI** como framework principal da API.
 
-## ORM e Banco de Dados
+### Por que utilizamos?
 
-Utilizamos o **SQLAlchemy** para mapeamento objeto-relacional, garantindo flexibilidade para interagir com o banco de dados.
+* Alta performance;
+* Suporte nativo a tipagem com Pydantic;
+* Facilidade para criação de rotas;
+* Geração automática de documentação da API.
 
-O controle de sessões foi encapsulado na dependência `get_db` usando o recurso `Depends` do FastAPI, assegurando que as conexões sejam abertas e fechadas corretamente em cada requisição.
+---
+
+## ORM e Banco de Dados: SQLAlchemy
+
+Utilizamos o **SQLAlchemy** para o mapeamento objeto-relacional (ORM).
+
+### Por que utilizamos?
+
+* Facilita a comunicação com o banco de dados;
+* Reduz a necessidade de escrever SQL manualmente;
+* Melhor organização e manutenção do código;
+* Controle seguro de conexões com o banco.
 
 ---
 
@@ -25,53 +36,75 @@ O controle de sessões foi encapsulado na dependência `get_db` usando o recurso
 
 ## Uso do Pandas
 
-Optamos pelo **pandas** para leitura em lote e tratamento inicial dos CSVs.
+Optamos pelo **pandas** para leitura e tratamento dos arquivos CSV.
 
-## Higienização de Nulos
+### Por que utilizamos?
 
-Criamos a função `limpar_dado` para padronizar variações de valores nulos (`NaN`, `NaT`, `""`, `"none"`) transformando-os no tipo genérico `None` do Python, evitando erros de tipagem ao inserir dados no banco relacional.
+* Processamento rápido de grandes volumes de dados;
+* Facilidade para limpeza e transformação das informações;
+* Manipulação eficiente de tabelas e planilhas.
+
+---
+
+## Higienização de Nulos (`limpar_dado`)
+
+Criamos a função `limpar_dado` para padronizar valores nulos.
+
+### Por que utilizamos?
+
+* Evita erros de tipagem no banco;
+* Garante maior consistência dos dados;
+* Facilita a importação de arquivos com dados incompletos.
+
+---
 
 ## Desduplicação e Idempotência
 
-### Em Memória
+Aplicamos validações antes da inserção dos registros.
 
-Aplicamos `drop_duplicates` no `DataFrame` antes do processamento, ignorando o ID original.
+### Por que utilizamos?
 
-### No Banco
-
-Antes de cada inserção, o script verifica se a combinação de `cliente_id` e `numero_processo` já existe na tabela `contrato_honorario`.
-
-Essa abordagem torna o script idempotente, permitindo múltiplas execuções sem duplicar registros.
+* Evita registros duplicados;
+* Permite executar o script várias vezes com segurança;
+* Mantém a integridade dos dados.
 
 ---
 
 # 3. Extração e Estruturação de PDFs
 
-A conversão de documentos jurídicos não estruturados para dados estruturados foi dividida em etapas.
+## Extração de Texto: `pdfplumber`
 
-## Extração de Texto
+Utilizamos a biblioteca **pdfplumber** para leitura dos PDFs.
 
-Escolhemos a biblioteca **pdfplumber** por sua precisão na extração de texto de PDFs pesquisáveis.
+### Por que utilizamos?
+
+* Boa precisão na extração de texto;
+* Melhor leitura de documentos jurídicos complexos;
+* Facilidade para trabalhar página por página.
+
+---
 
 ## Separação de Responsabilidades (Pipeline)
 
-Em vez de um script monolítico, criamos a função genérica `processar_lote_pdfs`.
+Criamos a função genérica `processar_lote_pdfs`.
 
-Ela recebe:
+### Por que utilizamos?
 
-* o diretório de origem;
-* o diretório de destino;
-* uma função de extração específica (ex.: `extrair_citacao`, `extrair_acordos`).
+* Melhor organização do processamento;
+* Código mais reutilizável;
+* Facilidade para adicionar novos tipos de documentos futuramente.
+
+---
 
 ## Armazenamento Intermediário (JSON)
 
-Decidimos salvar o resultado da extração em arquivos `.json` locais antes do envio ao banco de dados.
+Os dados extraídos são salvos em arquivos `.json` antes da inserção no banco.
 
-Essa estratégia:
+### Por que utilizamos?
 
-* cria uma camada de backup;
-* facilita auditoria;
-* simplifica depuração de falhas ou omissões dos extratores.
+* Cria uma camada de backup;
+* Facilita auditoria e depuração;
+* Evita reprocessamento dos PDFs em caso de falha.
 
 ---
 
@@ -79,44 +112,51 @@ Essa estratégia:
 
 ## Tabela Híbrida
 
-A tabela `movimentacoes` foi projetada para consolidar atributos provenientes de duas fontes distintas:
+A tabela `movimentacoes` reúne dados vindos de PDFs e planilhas CSV.
 
-* PDFs extraídos (via JSON);
-* planilhas CSV.
+### Por que utilizamos?
 
-Em vez de tabelas separadas, unificamos os dados no mesmo modelo, permitindo que atributos como:
-
-* `tipo_movimentacao` (origem JSON);
-* `tipo_ato` e `prazo_gerado` (origem CSV);
-
-coexistam no mesmo registro.
-
-Essa abordagem simplifica consultas futuras e reduz a complexidade da camada de integração para o front-end.
+* Simplifica consultas;
+* Reduz a complexidade do banco;
+* Facilita o consumo dos dados pelo front-end.
 
 ---
 
 # 5. Busca Semântica e Banco de Dados Vetorial
 
-Para permitir buscas avançadas no conteúdo dos documentos:
+## Extensão `pgvector`
 
-## Extensão pgvector
+Utilizamos o **pgvector** integrado ao PostgreSQL.
 
-Decidimos utilizar o **pgvector** integrado ao SQLAlchemy (`Vector(3072)`).
+### Por que utilizamos?
 
-Essa abordagem permite armazenar embeddings no mesmo banco PostgreSQL que contém os dados relacionais, evitando a necessidade de manter um banco vetorial separado (como Pinecone ou Milvus) nesta fase inicial.
+* Mantém dados relacionais e vetoriais no mesmo banco;
+* Reduz complexidade de infraestrutura;
+* Facilita buscas semânticas combinadas com filtros tradicionais.
 
-## Embeddings
+---
 
-Utilizamos o modelo `gemini-embedding-001` da Google Generative AI para gerar representações vetoriais dos textos.
+## Embeddings: `gemini-embedding-001`
 
-A busca semântica utiliza a função `cosine_distance` do pgvector para ranquear os resultados mais semanticamente próximos à pergunta do usuário.
+Utilizamos o modelo `gemini-embedding-001` para gerar embeddings.
 
-## Controle de Migração
+### Por que utilizamos?
 
-Na declaração da tabela `DocumentoVetorial`, adotamos a configuração:
+* Bom suporte ao português;
+* Fácil integração;
+* Boa relação entre desempenho e custo.
 
-```python
+---
+
+## Controle de Migração (`extend_existing=True`)
+
+Adotamos a configuração:
+
+```python id="z18k44"
 __table_args__ = {'extend_existing': True}
 ```
 
-Como o schema vetorial sofre alterações frequentes durante testes de embeddings, essa configuração evita conflitos relacionados à recriação de tabelas já existentes ao reiniciar a aplicação.
+### Por que utilizamos?
+
+* Evita conflitos durante alterações no schema;
+* Facilita testes e ajustes no ambiente de desenvolvimento.
