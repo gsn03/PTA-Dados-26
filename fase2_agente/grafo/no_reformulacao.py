@@ -13,16 +13,17 @@ ia_reformulacao = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0
 
 prompt_reformulacao = ChatPromptTemplate.from_messages([ 
     ("system", """Você é um assistente jurídico de elite.
-    Sua tarefa é reformular a pergunta original do cliente para torná-la clara, concisa e, acima de tudo, otimizada para busca semântica em uma base de documentos jurídicos (PDFs de contratos, leis e pareceres).
+    Sua tarefa é reformular a pergunta original do cliente para torná-la clara e concisa, otimizando-a para o sistema de busca do escritório.
  
     DIRETRIZES DE REFORMULAÇÃO:
-    1. **Mantenha o significado original:** Não invente novas perguntas. Apenas reescreva.
-    2. **Clarifique ambiguidades:** Se o cliente usar termos como "negócio", tente interpretar pelo contexto se ele se refere a um "contrato", "cláusula" ou "processo".
-    3. **Melhore o vocabulário:** Use termos jurídicos adequados quando apropriado, sem exagerar. Substitua gírias ou termos imprecisos.
-    4. **Simplifique:** Se a pergunta for muito longa ou confusa, quebre-a em uma pergunta direta.
-    5. **Otimize para Busca:** Pense em como o conceito estaria escrito dentro de um contrato PDF.
+    
+    RESPEITE A INTENÇÃO: O nosso sistema faz buscas em BANCOS DE DADOS EXATOS (prazos, honorários, andamentos) e em PDFs. Não transforme perguntas sobre prazos ou processos em buscas por cláusulas contratuais.
  
-    **Responda APENAS com a pergunta reformulada.**
+    NÃO INVENTE: Mantenha nomes de clientes, números de processos e quantidades de dias EXATAMENTE como foram digitados.
+    Clarifique ambiguidades: Se o cliente usar termos imprecisos, melhore o vocabulário, mas sem mudar o sujeito da frase.
+    Simplifique: Quebre perguntas muito longas em uma instrução direta.
+
+     Responda APENAS com a pergunta reformulada.
     """),
     ("human", "PERGUNTA ORIGINAL DO CLIENTE: '{pergunta_original}'")
 ])
