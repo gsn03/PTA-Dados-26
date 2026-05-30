@@ -15,7 +15,7 @@ os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
 
 # Adiciona os caminhos ao sistema para que as importações funcionem sem quebras
 sys.path.append(str(pasta_grafo))
-sys.path.append(str(pasta_fase2 / "rag"))
+sys.path.append(str(pasta_fase2 / "automacoes"))
 
 from langgraph.graph import StateGraph, START, END
 from langchain_core.messages import HumanMessage, AIMessage

@@ -7,14 +7,15 @@ import json
 pasta_grafo = Path(__file__).resolve().parent          # fase2_agente/grafo
 pasta_fase2 = pasta_grafo.parent                       # fase2_agente
 pasta_raiz = pasta_fase2.parent                        # Raiz
-pasta_rag = pasta_fase2 / "rag"                        # fase2_agente/rag
+pasta_automacoes = pasta_fase2 / "automacoes"
+
+sys.path.append(str(pasta_automacoes))
 
 # Carrega a chave do Google
 load_dotenv(pasta_raiz / ".env", override=True)
 os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
 
 # Adiciona a pasta rag ao sys.path para conseguirmos importar a lista_de_ferramentas
-sys.path.append(str(pasta_rag))
 
 from tools import lista_de_ferramentas
 from langchain_google_genai import ChatGoogleGenerativeAI

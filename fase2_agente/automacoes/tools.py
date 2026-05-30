@@ -6,9 +6,9 @@ from dotenv import load_dotenv
 from langchain_core.tools import tool
 
 # Navegação de pastas exatamente conforme a imagem enviada
-pasta_rag = Path(__file__).resolve().parent     
-pasta_fase2 = pasta_rag.parent                  
-pasta_raiz = pasta_fase2.parent 
+pasta_automacoes = Path(__file__).resolve().parent     
+pasta_fase2 = pasta_automacoes.parent                  
+pasta_raiz = pasta_fase2.parent
 
 # Carregar o arquivo .env que está na raiz
 load_dotenv(pasta_raiz / ".env", override=True)
