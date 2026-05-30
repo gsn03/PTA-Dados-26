@@ -90,9 +90,21 @@ def verificar_prazos_processuais(dias: int = 10) -> str:
             dados = resposta.json()
             if dados["total_prazos"] == 0:
                 return f"Nenhum prazo urgente encontrado no sistema para os próximos {dias} dias."
+            
+            processos = dados["processos_urgentes"]
+            
+            # ORDENAÇÃO ESTÁVEL: Ordena pela data (prazo). 
+            # O Python mantém a "ordem de chegada" original da API para itens com datas iguais.
+            processos.sort(key=lambda x: x["prazo"])
+            
+            # LIMITAÇÃO DE CARGA: Pega apenas os 15 mais urgentes para não engasgar o LLM
+            top_processos = processos[:15]
                 
-            texto = f"FORAM ENCONTRADOS {dados['total_prazos']} PRAZOS URGENTES:\n"
-            for p in dados["processos_urgentes"]:
+            texto = f"FORAM ENCONTRADOS {dados['total_prazos']} PRAZOS URGENTES.\n"
+            if dados['total_prazos'] > 15:
+                texto += f"Exibindo os {len(top_processos)} mais críticos ordenados por urgência e ordem de chegada:\n"
+            
+            for p in top_processos:
                 texto += f"- Cliente: {p['nome_cliente']} | Processo: {p['numero_processo']} | Vence em: {p['prazo']} | Advogado: {p['advogado']}\n"
             return texto
             
@@ -100,7 +112,6 @@ def verificar_prazos_processuais(dias: int = 10) -> str:
         
     except requests.exceptions.ConnectionError:
         return "RESULTADO_SISTEMA: Erro crítico. A API do escritório está desligada ou inacessível no momento."
-
 # FERRAMENTA 4: Relatório de Inadimplência via API
 @tool
 def checar_inadimplencia_honorarios() -> str:

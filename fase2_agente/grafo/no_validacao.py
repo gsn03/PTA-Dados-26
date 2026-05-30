@@ -34,7 +34,9 @@ def no_validacao(data: ValidacaoPayload) -> dict:
     1. INCONGRUÊNCIA: A resposta diz que não achou algo que ESTÁ no contexto.
     2. ALUCINAÇÃO: A resposta inventou nomes, valores ou fatos que NÃO estão no contexto.
     3. FONTE VAZIA: O contexto está vazio e a IA afirmou fatos como se fossem verdadeiros.
-    4. CITAÇÃO: A resposta não citou a fonte no padrão [Doc: Nome].
+    4. CITAÇÃO (REGRA CONDICIONAL): 
+       - Se a 'Ferramenta' indicada no contexto for 'buscar_jurisprudencia_documentos', a resposta DEVE conter a citação no padrão [Doc: Nome_do_Arquivo.pdf]. Se faltar, REPROVE.
+       - Se a 'Ferramenta' for qualquer outra (prazos, histórico, inadimplência), a citação NÃO É OBRIGATÓRIA. Não reprove por falta de colchetes nestes casos.
 
     REGRAS DE OURO:
      - Se o nome da pessoa for diferente: REPROVADO.
@@ -52,7 +54,6 @@ def no_validacao(data: ValidacaoPayload) -> dict:
     """),
     ("human", "CONTEXTO: {contexto}\n\nRESPOSTA DA IA: {resposta}")
     ])
-
     motor_validacao = prompt_validador | llm_validador
 
     # Bypass para erros de sistema

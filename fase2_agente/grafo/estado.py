@@ -1,9 +1,12 @@
 from typing import Annotated, TypedDict
 from langgraph.graph.message import add_messages
 
-# Esta classe é o "caderno de anotações" do nosso Agente.
-# Tudo o que for gerado (perguntas, respostas, resultados de buscas) ficará salvo aqui.
+# Esta classe é o "caderno de anotações" do nosso Agente completo.
 class EstadoAgente(TypedDict):
-    # A anotação 'add_messages' garante que as novas mensagens (como o resultado do banco de dados)
-    # sejam adicionadas ao histórico da conversa, em vez de apagarem a pergunta original.
+    # Histórico de mensagens trocadas no grafo
     messages: Annotated[list, add_messages]
+    
+    # Campos de controle exigidos para o Nó de Validação
+    contexto_recuperado: str
+    resposta_gerada: str
+    tentativas: int
