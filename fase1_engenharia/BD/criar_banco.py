@@ -1,0 +1,10 @@
+from database_model import engine, Base
+import model_Cliente 
+import model_honorarios
+import model_movimentacoes
+import model_processos
+#coloquem os modelos aqui. Sigam o exemplo do import model_Cliente
+
+
+#Executa a criação das tabelas
+Base.metadata.create_all(bind=engine)

@@ -1,0 +1,15 @@
+{
+    "arquivo_origem": "contrato_honorarios_joao_silva.pdf",
+    "tipo_documento": "contrato_honorarios",
+    "tipo_processo": "Trabalhista",
+    "nome_cliente": "João Silva",
+    "cpf_cnpj": "123.456.789-00",
+    "nacionalidade": null,
+    "estado_civil": null,
+    "ocupacao": null,
+    "endereco_completo": "Rua das Flores, 45, Recife/PE",
+    "nome_advogado": "Fernanda Melo",
+    "oab_advogado": "PE 12.345",
+    "valor_total_honorarios": "R$ 18.000,00",
+    "honorarios_exito": "20% (vinte por cento) sobre"
+}

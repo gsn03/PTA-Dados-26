@@ -1,0 +1,15 @@
+{
+    "arquivo_origem": "acordo_extrajudicial_fernanda_costa.pdf",
+    "tipo_documento": "acordo",
+    "texto_bruto": "TERMO DE ACORDO EXTRAJUDICIAL\nProcesso nº 9876543-01.2023.8.17.0001 — 5ª Vara Cível de Recife\nAos vinte e três dias do mês de outubro do ano de dois mil e vinte e cinco, presentes a Autora\nFERNANDA COSTA, representada por seu advogado Dr. Barros (OAB/PE 67.890), e o Réu\nCONSTRUTORA PEDRA BRANCA LTDA., representada por seu procurador Dr. Ribeiro (OAB/PE\n11.234), resolvem celebrar o presente acordo extrajudicial nos seguintes termos:\n1. DO OBJETO: O Réu se compromete a reparar todos os vícios construtivos identificados no imóvel\nadquirido pela Autora, situado na Rua Setúbal, 890, Apto. 1204, Boa Viagem, Recife, no prazo máximo de\nnoventa dias a contar da assinatura deste instrumento.\n2. DA INDENIZAÇÃO: O Réu pagará à Autora a título de indenização por danos morais e materiais o\nvalor de R$ 35.000,00 (trinta e cinco mil reais), a ser quitado em parcela única mediante depósito judicial\naté o dia 15 de novembro de 2025.\n3. DA EXTINÇÃO DO PROCESSO: Com o cumprimento integral das obrigações acima, as partes\nrequerem conjuntamente a extinção do processo com resolução do mérito, nos termos do art. 487, III, 'b'\ndo CPC.\n4. DA QUITAÇÃO: A Autora dá ao Réu plena e irrevogável quitação de todos os pedidos formulados na\ninicial, nada mais tendo a reclamar em relação aos fatos que motivaram a presente demanda.\nRecife, 23 de outubro de 2025.\n__________________________ __________________________\nFernanda Costa — Autora Construtora Pedra Branca Ltda.\n",
+    "n_processo": "9876543-01.2023.8.17.0001",
+    "acusando_autor": "FERNANDA COSTA",
+    "acusado_reu": "CONSTRUTORA PEDRA BRANCA LTDA.",
+    "nome_advogado": "Dr. Barros",
+    "nome_advogado_reu": null,
+    "oab_advogado": "OAB/PE 67.890",
+    "oab_advogado_reu": null,
+    "valor_total_acordo": "R$ 35.000,00",
+    "tipo_processo": "Cível",
+    "tribunal_vara": null
+}

@@ -1,0 +1,15 @@
+{
+    "arquivo_origem": "contrato_honorarios_maria_oliveira.pdf",
+    "tipo_documento": "contrato_honorarios",
+    "tipo_processo": "Cível",
+    "nome_cliente": "Maria Oliveira",
+    "cpf_cnpj": "987.654.321-11",
+    "nacionalidade": null,
+    "estado_civil": null,
+    "ocupacao": null,
+    "endereco_completo": "Olinda/PE",
+    "nome_advogado": "Não encontrado",
+    "oab_advogado": "Não encontrada",
+    "valor_total_honorarios": "R$ 12.500,00",
+    "honorarios_exito": "15% sobre"
+}
