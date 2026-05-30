@@ -78,7 +78,7 @@ def buscar_historico_processo(numero_processo: str, nome_cliente: str) -> str:
 # FERRAMENTA 3: Alerta de Prazos Urgentes via API
 
 @tool
-def verificar_prazos_processuais(dias: int = 7) -> str:
+def verificar_prazos_processuais(dias: int = 10) -> str:
     """
     Busca processos com prazos ou audiências urgentes nos próximos 'X' dias.
     USE ESTA FERRAMENTA para responder a perguntas sobre calendário, prazos vencendo, urgências ou o que fazer nesta semana.
