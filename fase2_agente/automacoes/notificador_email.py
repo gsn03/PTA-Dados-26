@@ -10,7 +10,7 @@ load_dotenv()
 resend.api_key = os.getenv("RESEND_API_KEY")
 
 # Carrega a URL da API do .env (com fallback para localhost caso falte)
-API_URL = os.getenv("API_URL", "http://localhost:8000")
+API_URL = os.getenv("API_KEY")
 
 def enviar_email_alerta(email_destinatario: str, nome_cliente: str, numero_processo: str, data_prazo: str) -> bool:
     """
