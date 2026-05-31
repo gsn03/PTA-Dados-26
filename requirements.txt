@@ -25,6 +25,7 @@ fastapi
 uvicorn
 python-dotenv
 httpx
+resend
 
 # ── Interface ─────────────────────────────────────────────────────────────────
 streamlit
