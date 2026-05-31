@@ -54,7 +54,7 @@ def buscar_historico_processo(numero_processo: str, nome_cliente: str) -> str:
     USE ESTA FERRAMENTA para responder "Qual o status do processo X do cliente Y?".
     """
     try:
-        resposta = requests.get(f"{API_URL}/ia/processo_historico", params={"numero_processo": numero_processo, "nome_cliente": nome_cliente})
+        resposta = requests.get(f"{API_URL}/ia/processo_historico", params={"numero_processo": numero_processo, "nome_cliente": nome_cliente}, timeout=10)
         
         if resposta.status_code == 200:
             dados = resposta.json()
@@ -72,71 +72,91 @@ def buscar_historico_processo(numero_processo: str, nome_cliente: str) -> str:
         else:
             return f"RESULTADO_SISTEMA: Erro desconhecido da API. Status Code: {resposta.status_code}"
             
+    except requests.exceptions.Timeout:
+        return "RESULTADO_SISTEMA: Erro crítico. A API do escritório demorou mais de 10 segundos para responder (Timeout)."
     except requests.exceptions.ConnectionError:
         return "RESULTADO_SISTEMA: Erro crítico. A API do escritório está desligada ou inacessível no momento."
-
 # FERRAMENTA 3: Alerta de Prazos Urgentes via API
 
+# FERRAMENTA 3: Alerta de Prazos Urgentes via API
 @tool
-def verificar_prazos_processuais(dias: int = 10) -> str:
+def verificar_prazos_processuais(dias: int = 10, nome_cliente: str = None, numero_processo: str = None) -> str:
     """
     Busca processos com prazos ou audiências urgentes nos próximos 'X' dias.
+    Parâmetros opcionais: nome_cliente e numero_processo.
     USE ESTA FERRAMENTA para responder a perguntas sobre calendário, prazos vencendo, urgências ou o que fazer nesta semana.
     """
     try:
-        resposta = requests.get(f"{API_URL}/ia/prazos_urgentes", params={"dias": dias})
+        resposta = requests.get(f"{API_URL}/ia/prazos_urgentes", params={"dias": dias}, timeout=10)
         
         if resposta.status_code == 200:
             dados = resposta.json()
-            if dados["total_prazos"] == 0:
-                return f"Nenhum prazo urgente encontrado no sistema para os próximos {dias} dias."
+            processos = dados.get("processos_urgentes", [])
             
-            processos = dados["processos_urgentes"]
-            
-            # ORDENAÇÃO ESTÁVEL: Ordena pela data (prazo). 
-            # O Python mantém a "ordem de chegada" original da API para itens com datas iguais.
-            processos.sort(key=lambda x: x["prazo"])
-            
-            # LIMITAÇÃO DE CARGA: Pega apenas os 15 mais urgentes para não engasgar o LLM
-            top_processos = processos[:15]
+            # FILTRAGEM NO PYTHON (Para não sobrecarregar o LLM)
+            if nome_cliente:
+                processos = [p for p in processos if nome_cliente.lower() in p["nome_cliente"].lower()]
+            if numero_processo:
+                # Removemos possíveis traços e pontos para garantir que a busca acha o número
+                num_limpo = numero_processo.replace(".", "").replace("-", "")
+                processos = [p for p in processos if num_limpo in p["numero_processo"].replace(".", "").replace("-", "")]
                 
-            texto = f"FORAM ENCONTRADOS {dados['total_prazos']} PRAZOS URGENTES.\n"
-            if dados['total_prazos'] > 15:
-                texto += f"Exibindo os {len(top_processos)} mais críticos ordenados por urgência e ordem de chegada:\n"
+            if not processos:
+                return f"Nenhum prazo urgente encontrado no sistema para os critérios informados nos próximos {dias} dias."
             
+            processos.sort(key=lambda x: x["prazo"])
+            top_processos = processos[:15] # Trava de segurança
+                
+            texto = f"FORAM ENCONTRADOS {len(processos)} PRAZOS PARA ESTE CRITÉRIO.\n"
             for p in top_processos:
                 texto += f"- Cliente: {p['nome_cliente']} | Processo: {p['numero_processo']} | Vence em: {p['prazo']} | Advogado: {p['advogado']}\n"
             return texto
             
         return f"RESULTADO_SISTEMA: Erro da API ao buscar prazos. Status Code: {resposta.status_code}"
         
+    except requests.exceptions.Timeout:
+        return "RESULTADO_SISTEMA: Erro crítico. A API demorou mais de 10 segundos para responder (Timeout)."
     except requests.exceptions.ConnectionError:
-        return "RESULTADO_SISTEMA: Erro crítico. A API do escritório está desligada ou inacessível no momento."
+        return "RESULTADO_SISTEMA: Erro crítico. A API está inacessível."
+    
 # FERRAMENTA 4: Relatório de Inadimplência via API
 @tool
-def checar_inadimplencia_honorarios() -> str:
+def checar_inadimplencia_honorarios(nome_cliente: str = None) -> str:
     """
     Gera um relatório de clientes inadimplentes ou com contratos de honorários em aberto.
-    USE ESTA FERRAMENTA para responder quem está a dever dinheiro, valores em aberto ou status de pagamentos.
+    Se o usuário perguntar sobre a dívida de uma pessoa específica, envie o 'nome_cliente'.
     """
     try:
-        resposta = requests.get(f"{API_URL}/ia/inadimplencia")
+        resposta = requests.get(f"{API_URL}/ia/inadimplencia", timeout=15)
         
         if resposta.status_code == 200:
             dados = resposta.json()
-            if dados["total_inadimplentes"] == 0:
-                return "Excelente notícia. Não há nenhum cliente com honorários atrasados no banco de dados."
+            detalhamento = dados.get("detalhamento", [])
+            
+            # FILTRAGEM NO PYTHON (Para evitar enviar 4.000 registros ao LLM)
+            if nome_cliente:
+                detalhamento = [d for d in detalhamento if nome_cliente.lower() in d["nome_cliente"].lower()]
+                if not detalhamento:
+                    return f"Excelente notícia. Não há nenhum contrato em atraso registrado para o cliente '{nome_cliente}'."
+            else:
+                # Se não enviou nome, devolve apenas os 15 maiores devedores para não travar o LLM
+                detalhamento = sorted(detalhamento, key=lambda x: float(x.get("valor_em_aberto", 0)), reverse=True)[:15]
+
+            if not detalhamento:
+                return "Não há nenhum cliente com honorários atrasados no banco de dados."
                 
-            texto = f"FORAM ENCONTRADOS {dados['total_inadimplentes']} CONTRATOS COM PENDÊNCIA FINANCEIRA:\n"
-            for d in dados["detalhamento"]:
+            texto = f"FORAM ENCONTRADOS {len(detalhamento)} REGISTROS DE INADIMPLÊNCIA PARA ESTE CRITÉRIO:\n"
+            for d in detalhamento:
                 texto += f"- Cliente: {d['nome_cliente']} (Tel: {d['contato_cliente']}) | Dívida: R$ {d['valor_em_aberto']} | Venceu em: {d['data_vencimento']} | Status: {d['status_pagamento']}\n"
             return texto
             
         return f"RESULTADO_SISTEMA: Erro da API ao buscar inadimplência. Status Code: {resposta.status_code}"
         
+    except requests.exceptions.Timeout:
+        return "RESULTADO_SISTEMA: Erro crítico. A API demorou mais de 15 segundos para responder (Timeout)."
     except requests.exceptions.ConnectionError:
-        return "RESULTADO_SISTEMA: Erro crítico. A API do escritório está desligada ou inacessível no momento."
-
+        return "RESULTADO_SISTEMA: Erro crítico. A API está inacessível."
+    
 # Agrupando as ferramentas numa lista para injetar no Agente mais tarde
 lista_de_ferramentas = [
     buscar_jurisprudencia_documentos, 

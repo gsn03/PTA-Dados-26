@@ -63,6 +63,14 @@ def executar_no_de_busca(entrada_texto: str) -> str:
     A Proibição Vetorial: "Para acionar a ferramenta 'buscar_jurisprudencia_documentos', a pergunta deve conter um tema ou assunto claro. 
     Se o utilizador disser apenas 'busque um documento', NÃO acione a ferramenta. 
     Responda: 'SISTEMA_VALIDACAO: Sobre qual tema, cliente ou processo deseja que eu busque nos documentos?'"
+    
+    5. MÚLTIPLAS INTENÇÕES (PARALLEL CALLING): Se a pergunta do usuário exigir buscar mais de uma informação distinta
+    (exemplo: "Qual o status do processo X E qual a dívida do cliente Y?"), você TEM PERMISSÃO para acionar DUAS OU MAIS ferramentas simultaneamente.
+    
+    6. FILTROS OBRIGATÓRIOS: As ferramentas 'verificar_prazos_processuais' e 'checar_inadimplencia_honorarios' trazem TODO o banco de dados. Para evitar sobrecarga:
+       - Se o usuário citar um cliente ou processo, você DEVE preencher os parâmetros 'nome_cliente' ou 'numero_processo' nas ferramentas.
+       - Só deixe os parâmetros em branco se o usuário pedir o cenário geral (ex: "quem são todos os devedores?").
+    
     """)
 
     
@@ -73,22 +81,34 @@ def executar_no_de_busca(entrada_texto: str) -> str:
         resposta_ia = llm_com_ferramentas.invoke([prompt_sistema, mensagem_usuario])
         
         # CENÁRIO A: A IA decidiu chamar uma ferramenta
+        # CENÁRIO A: A IA decidiu chamar uma ou mais ferramentas
         if resposta_ia.tool_calls:
-            chamada = resposta_ia.tool_calls[0]
-            nome_ferramenta = chamada["name"]
-            argumentos = chamada["args"]
+            resultados_multiplos = []
+            ferramentas_usadas = []
             
-            print(f"[NÓ DE BUSCA] Ferramenta escolhida: {nome_ferramenta}")
+            # LOOP: Agora o sistema executa todas as ferramentas solicitadas, e não apenas a primeira [0]
+            for chamada in resposta_ia.tool_calls:
+                nome_ferramenta = chamada["name"]
+                argumentos = chamada["args"]
+                
+                print(f"[NÓ DE BUSCA] Ferramenta escolhida: {nome_ferramenta}")
+                
+                # Executa a ferramenta
+                ferramenta_real = mapa_ferramentas[nome_ferramenta]
+                resultado_api = ferramenta_real.invoke(argumentos)
+                
+                # Guarda o resultado de cada ferramenta numa lista
+                resultados_multiplos.append({
+                    "origem_ferramenta": nome_ferramenta,
+                    "dados": resultado_api
+                })
+                ferramentas_usadas.append(nome_ferramenta)
             
-            # Executa a ferramenta
-            ferramenta_real = mapa_ferramentas[nome_ferramenta]
-            resultado_api = ferramenta_real.invoke(argumentos)
-            
-            # Formata o SUCESSO em JSON
+            # Formata o SUCESSO com todos os dados empacotados num único JSON
             resposta_padronizada = {
                 "status": "sucesso",
-                "ferramenta_utilizada": nome_ferramenta,
-                "dados_recuperados": resultado_api
+                "ferramenta_utilizada": ", ".join(ferramentas_usadas),
+                "dados_recuperados": resultados_multiplos
             }
             return json.dumps(resposta_padronizada, ensure_ascii=False, indent=2)
             
