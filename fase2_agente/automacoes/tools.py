@@ -76,7 +76,7 @@ def buscar_historico_processo(numero_processo: str, nome_cliente: str) -> str:
         return "RESULTADO_SISTEMA: Erro crítico. A API do escritório demorou mais de 10 segundos para responder (Timeout)."
     except requests.exceptions.ConnectionError:
         return "RESULTADO_SISTEMA: Erro crítico. A API do escritório está desligada ou inacessível no momento."
-# FERRAMENTA 3: Alerta de Prazos Urgentes via API
+
 
 # FERRAMENTA 3: Alerta de Prazos Urgentes via API
 @tool

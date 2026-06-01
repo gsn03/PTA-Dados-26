@@ -30,11 +30,21 @@ from no_validacao import no_validacao
 # -----------------------------------------------------------------------------
 
 def node_reformulacao_wrapper(state: EstadoAgente) -> Dict[str, Any]:
-    # Pega rigorosamente a última mensagem digitada pelo Humano (ignora erros da IA no loop)
+    # 1. Pega todas as mensagens humanas do estado global
     mensagens_humanas = [m for m in state["messages"] if isinstance(m, HumanMessage)]
+    
+    # 2. A pergunta atual é a última mensagem da lista
     ultima_msg = mensagens_humanas[-1].content if mensagens_humanas else state["messages"][-1].content
     
-    pergunta_reformulada = reformular_pergunta(ultima_msg)
+    # 3. O histórico são as mensagens humanas anteriores (limitado às últimas 3 para economizar tokens)
+    historico_str = ""
+    if len(mensagens_humanas) > 1:
+        mensagens_anteriores = mensagens_humanas[-4:-1] # Pega até 3 mensagens antes da atual
+        for i, m in enumerate(mensagens_anteriores):
+            historico_str += f"Pergunta Anterior {i+1}: {m.content}\n"
+    
+    # 4. Envia o histórico e a pergunta para o novo reformulador
+    pergunta_reformulada = reformular_pergunta(ultima_msg, historico=historico_str)
     
     tentativas = state.get("tentativas", 0) or 0
     return {
