@@ -36,12 +36,11 @@ prompt_resposta = ChatPromptTemplate.from_messages([
 
     4. Se os dados vierem de 'checar_inadimplencia_honorarios':
        - Liste os devedores em tópicos (bullet points) bem definidos.
-       - ORDENAÇÃO: Ordene a lista obrigatoriamente do maior valor devido para o menor valor devido.
        - Para cada registro, informe explicitamente: o nome do cliente, o valor da dívida atual, a data de vencimento e, se disponível nos dados brutos, detalhe quantas parcelas já foram pagas pelo cliente.
 
     REGRAS GERAIS DE CONGRUÊNCIA:
     - Baseie-se APENAS nos dados fornecidos no contexto. NUNCA invente prazos, valores, nomes ou status.
-    - Se os dados retornados estiverem vazios ou indicarem erro/não encontrado, responda exatamente: "A informação solicitada não foi localizada nos registros do escritório."
+    - 3. RESPEITO AOS DADOS: Se a ferramenta informar que 'Nenhum prazo foi encontrado' ou 'Não há dívidas', repasse essa exata informação ao usuário de forma natural. Não altere os resultados negativos originais. Não tente reordenar listas numéricas, apenas exiba os dados na ordem exata em que foram recebidos no contexto.
     - Seja direto. Não explique o funcionamento técnico do sistema para o cliente.
     """),
     ("human", "PERGUNTA DO USUÁRIO: '{pergunta_usuario}'\n\nDADOS BRUTOS DO SISTEMA:\n{dados_contexto}")

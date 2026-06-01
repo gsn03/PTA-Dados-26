@@ -120,6 +120,7 @@ def verificar_prazos_processuais(dias: int = 10, nome_cliente: str = None, numer
         return "RESULTADO_SISTEMA: Erro crítico. A API está inacessível."
     
 # FERRAMENTA 4: Relatório de Inadimplência via API
+# FERRAMENTA 4: Relatório de Inadimplência via API
 @tool
 def checar_inadimplencia_honorarios(nome_cliente: str = None) -> str:
     """
@@ -133,19 +134,21 @@ def checar_inadimplencia_honorarios(nome_cliente: str = None) -> str:
             dados = resposta.json()
             detalhamento = dados.get("detalhamento", [])
             
-            # FILTRAGEM NO PYTHON (Para evitar enviar 4.000 registros ao LLM)
+            # FILTRAGEM NO PYTHON (Para evitar enviar milhares de registros ao LLM)
             if nome_cliente:
                 detalhamento = [d for d in detalhamento if nome_cliente.lower() in d["nome_cliente"].lower()]
                 if not detalhamento:
                     return f"Excelente notícia. Não há nenhum contrato em atraso registrado para o cliente '{nome_cliente}'."
+                
+                # OTIMIZAÇÃO: O Python ordena a dívida do Leandro Pinto (maior para menor) e pega só os 15 piores
+                detalhamento = sorted(detalhamento, key=lambda x: float(x.get("valor_em_aberto", 0)), reverse=True)[:15]
             else:
-                # Se não enviou nome, devolve apenas os 15 maiores devedores para não travar o LLM
                 detalhamento = sorted(detalhamento, key=lambda x: float(x.get("valor_em_aberto", 0)), reverse=True)[:15]
 
             if not detalhamento:
                 return "Não há nenhum cliente com honorários atrasados no banco de dados."
                 
-            texto = f"FORAM ENCONTRADOS {len(detalhamento)} REGISTROS DE INADIMPLÊNCIA PARA ESTE CRITÉRIO:\n"
+            texto = f"FORAM ENCONTRADOS {len(detalhamento)} REGISTROS DE INADIMPLÊNCIA PARA ESTE CRITÉRIO (Exibindo até 15 maiores):\n"
             for d in detalhamento:
                 texto += f"- Cliente: {d['nome_cliente']} (Tel: {d['contato_cliente']}) | Dívida: R$ {d['valor_em_aberto']} | Venceu em: {d['data_vencimento']} | Status: {d['status_pagamento']}\n"
             return texto
@@ -153,7 +156,7 @@ def checar_inadimplencia_honorarios(nome_cliente: str = None) -> str:
         return f"RESULTADO_SISTEMA: Erro da API ao buscar inadimplência. Status Code: {resposta.status_code}"
         
     except requests.exceptions.Timeout:
-        return "RESULTADO_SISTEMA: Erro crítico. A API demorou mais de 15 segundos para responder (Timeout)."
+        return "RESULTADO_SISTEMA: Erro crítico. A API demorou mais de 15 segundos para responder."
     except requests.exceptions.ConnectionError:
         return "RESULTADO_SISTEMA: Erro crítico. A API está inacessível."
     
