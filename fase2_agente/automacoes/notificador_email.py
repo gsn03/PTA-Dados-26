@@ -1,31 +1,95 @@
 import os
 import requests
 import resend
-from datetime import datetime, timedelta
+from datetime import datetime
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Inicializa o Resend com a chave do .env
 resend.api_key = os.getenv("RESEND_API_KEY")
+API_URL = os.getenv("API_KEY") 
+EMAIL_EQUIPE = "ptaequipegustavo@gmail.com"
 
-# Carrega a URL da API do .env (com fallback para localhost caso falte)
-API_URL = os.getenv("API_KEY")
+def gerar_linhas_tabela(processos, cor_fundo):
+    """Gera as linhas HTML dinâmicas baseadas nos dados da API"""
+    if not processos:
+        return f"<tr><td colspan='4' style='padding: 10px; text-align: center; background-color: #f9f9f9; color: #777;'>Sem prazos para esta categoria hoje.</td></tr>"
 
-def enviar_email_alerta(email_destinatario: str, nome_cliente: str, numero_processo: str, data_prazo: str) -> bool:
-    """
-    Envia o alerta de prazo utilizando a API do Resend.
-    """
+    linhas = ""
+    for p in processos:
+        linhas += f"""
+        <tr style="background-color: {cor_fundo}; border-bottom: 1px solid #ddd;">
+            <td style="padding: 10px;"><strong>{p['nome_cliente']}</strong></td>
+            <td style="padding: 10px;">{p['numero_processo']}</td>
+            <td style="padding: 10px;">{p['prazo']}</td>
+            <td style="padding: 10px;">{p['fase_atual']}</td>
+        </tr>
+        """
+    return linhas
+
+def executar_relatorio_matinal():
+    print(f"[{datetime.now()}] Iniciando geração do Relatório Matinal...")
+
+    # 1. Busca dados de 5 dias (Zona de Perigo)
+    try:
+        resp_5 = requests.get(f"{API_URL}/ia/alertas_email", params={"dias_exatos": 5}, timeout=10)
+        processos_5 = resp_5.json().get("processos", []) if resp_5.status_code == 200 else []
+    except Exception as e:
+        print(f"Erro ao buscar prazos de 5 dias: {e}")
+        processos_5 = []
+
+    # 2. Busca dados de 15 dias (Zona de Atenção)
+    try:
+        resp_15 = requests.get(f"{API_URL}/ia/alertas_email", params={"dias_exatos": 15}, timeout=10)
+        processos_15 = resp_15.json().get("processos", []) if resp_15.status_code == 200 else []
+    except Exception as e:
+        print(f"Erro ao buscar prazos de 15 dias: {e}")
+        processos_15 = []
+
+    linhas_perigo = gerar_linhas_tabela(processos_5, "#ffebee") # Fundo avermelhado
+    linhas_atencao = gerar_linhas_tabela(processos_15, "#fff8e1") # Fundo amarelado
+
     conteudo_html = f"""
     <html>
-        <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
-            <h2 style="color: #d9534f;">Aviso de Prazo Iminente ⚠️</h2>
-            <p>Olá,</p>
-            <p>O prazo para o processo <strong>{numero_processo}</strong> do cliente <strong>{nome_cliente}</strong> 
-            encerra em exatos 5 dias (<strong>{data_prazo}</strong>).</p>
-            <p>Por favor, verifique as providências necessárias no sistema.</p>
-            <hr style="border: 0; border-top: 1px solid #eee;">
-            <p style="font-size: 12px; color: #777;">Esta é uma mensagem automática do sistema.</p>
+        <body style="font-family: Arial, sans-serif; color: #333; max-width: 800px; margin: auto;">
+            <h2 style="color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 10px;">Resumo Matinal: Prazos e Urgências da Equipe</h2>
+            <p>Bom dia, equipe. Segue o panorama de prazos processuais para foco no dia de hoje.</p>
+
+            <h3 style="color: #c0392b;">🔴 ZONA DE PERIGO (Vencimento em exatos 5 dias)</h3>
+            <table style="width: 100%; border-collapse: collapse; text-align: left; border: 1px solid #ddd;">
+                <thead>
+                    <tr style="background-color: #c0392b; color: white;">
+                        <th style="padding: 10px;">Cliente</th>
+                        <th style="padding: 10px;">Processo</th>
+                        <th style="padding: 10px;">Data de Vencimento</th>
+                        <th style="padding: 10px;">Fase Atual</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {linhas_perigo}
+                </tbody>
+            </table>
+
+            <h3 style="color: #f39c12; margin-top: 30px;">🟡 ZONA DE ATENÇÃO (Vencimento em exatos 15 dias)</h3>
+            <table style="width: 100%; border-collapse: collapse; text-align: left; border: 1px solid #ddd;">
+                <thead>
+                    <tr style="background-color: #f39c12; color: white;">
+                        <th style="padding: 10px;">Cliente</th>
+                        <th style="padding: 10px;">Processo</th>
+                        <th style="padding: 10px;">Data de Vencimento</th>
+                        <th style="padding: 10px;">Fase Atual</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {linhas_atencao}
+                </tbody>
+            </table>
+
+            <p style="margin-top: 30px; font-size: 14px; background-color: #f4f6f7; padding: 10px; border-radius: 5px;">
+                <em>💡 <strong>Dica de uso:</strong> Copie o número do processo e o nome do cliente e consulte o nosso Agente de IA para obter o histórico completo e o status atualizado de forma instantânea.</em>
+            </p>
+            <hr style="border: 0; border-top: 1px solid #eee; margin-top: 20px;">
+            <p style="font-size: 11px; color: #777; text-align: center;">Agente Jurídico Automático - Relatório gerado em {datetime.now().strftime("%d/%m/%Y às %H:%M")}</p>
         </body>
     </html>
     """
@@ -33,65 +97,15 @@ def enviar_email_alerta(email_destinatario: str, nome_cliente: str, numero_proce
     try:
         params = {
             "from": "onboarding@resend.dev",
-            "to": [email_destinatario],
-            "subject": f"URGENTE: Prazo vencendo em 5 dias - Processo {numero_processo}",
+            "to": [EMAIL_EQUIPE],
+            "subject": "Resumo Matinal: Prazos e Urgências da Equipe",
             "html": conteudo_html
         }
 
         resend.Emails.send(params)
-        return True
-        
+        print("[SUCESSO] Relatório Matinal enviado para a equipe.")
     except Exception as e:
-        print(f"Erro ao disparar e-mail via Resend: {str(e)}")
-        return False
+        print(f"[ERRO CRÍTICO] Falha ao enviar e-mail via Resend: {str(e)}")
 
-def verificar_e_notificar_prazos_5_dias():
-    hoje = datetime.now().date()
-    data_limite = hoje + timedelta(days=5)
-    
-    try:
-        # Pede os próximos 5 dias para a API
-        resposta = requests.get(f"{API_URL}/ia/prazos_urgentes", params={"dias": 5})
-        
-        if resposta.status_code == 200:
-            dados = resposta.json()
-            processos = dados.get("processos_urgentes", [])
-            
-            if not processos:
-                print("Nenhum processo urgente retornado pela API.")
-                return
-                
-            emails_enviados = 0
-            
-            for p in processos:
-                try:
-                    prazo_processo = datetime.strptime(p["prazo"], "%Y-%m-%d").date()
-                except ValueError:
-                    prazo_processo = datetime.strptime(p["prazo"].split()[0], "%Y-%m-%d").date()
-
-                if hoje <= prazo_processo <= data_limite:
-                    chave_alerta = f"{p['numero_processo']}_{p['prazo']}"                 
-                    email_teste = "ptaequipegustavo@gmail.com"
-                    
-                    sucesso = enviar_email_alerta(
-                        email_destinatario=email_teste,
-                        nome_cliente=p["nome_cliente"],
-                        numero_processo=p["numero_processo"],
-                        data_prazo=p["prazo"]
-                    )
-                    
-                    if sucesso:
-                        emails_enviados += 1
-                        print(f"E-mail enviado: Cliente {p['nome_cliente']} | Processo {p['numero_processo']}")
-            
-            print(f"Varredura concluída. {emails_enviados} novos alertas enviados hoje.")
-        else:
-            print(f"Erro da API ao buscar prazos. Status Code: {resposta.status_code}")
-            
-    except requests.exceptions.ConnectionError:
-        print("Erro crítico. A API do escritório está desligada ou inacessível no momento.")
-
-# Bloco para execução direta do script no agendador de tarefas
 if __name__ == "__main__":
-    print(f"[{datetime.now()}] Iniciando rotina de notificações...")
-    verificar_e_notificar_prazos_5_dias()
+    executar_relatorio_matinal()

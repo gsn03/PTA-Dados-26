@@ -104,3 +104,28 @@ def relatorio_inadimplencia_ia(db: Session = Depends(get_db)):
         })
         
     return {"total_inadimplentes": len(resultado), "detalhamento": resultado}
+
+@router.get("/alertas_email")
+def buscar_prazos_para_email_exato(dias_exatos: int, db: Session = Depends(get_db)):
+    """
+    Rota exclusiva para automação de e-mails internos (Relatório Matinal).
+    Busca processos que vencem em um dia matemático EXATO.
+    """
+    data_alvo = date.today() + timedelta(days=dias_exatos)
+    
+    # Busca APENAS os processos que vencem NAQUELA data exata
+    processos_alvo = db.query(Processo).filter(
+        Processo.prazo_proximo == data_alvo
+    ).all()
+    
+    resultado = []
+    for proc in processos_alvo:
+        cliente = db.query(Cliente).filter(Cliente.id == proc.cliente_id).first()
+        resultado.append({
+            "numero_processo": proc.numero_processo,
+            "nome_cliente": cliente.nome if cliente else "Desconhecido",
+            "prazo": proc.prazo_proximo,
+            "fase_atual": proc.fase
+        })
+        
+    return {"data_alvo": data_alvo, "total_envios": len(resultado), "processos": resultado}
