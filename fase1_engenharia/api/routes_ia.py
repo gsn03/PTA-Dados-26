@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from sqlalchemy import desc, func
 from datetime import date, timedelta
 import sys
 from pathlib import Path
@@ -129,3 +129,27 @@ def buscar_prazos_para_email_exato(dias_exatos: int, db: Session = Depends(get_d
         })
         
     return {"data_alvo": data_alvo, "total_envios": len(resultado), "processos": resultado}
+
+@router.get("/status_vertente")
+def obter_status_por_vertente(db: Session = Depends(get_db)):
+    # tratar nulos e maiusculo/minusculo para evitar duplicidade
+    tipo_tratado = func.coalesce(func.upper(Processo.tipo_processo), "NÃO INFORMADO")
+    status_tratado = func.coalesce(func.upper(Processo.status), 'NÃO INFORMADO')
+
+    # query
+    resultados = db.query(
+        tipo_tratado.label('vertente'),
+        status_tratado.label('status'),
+        func.count(Processo.id).label('quantidade')
+    ).group_by(
+        tipo_tratado,
+        status_tratado
+    ).all()
+
+    # formatando a saída em JSON
+    dados_formatados = [
+        {"vertente": r.vertente, "status": r.status, "quantidade": r.quantidade} 
+        for r in resultados
+    ]
+
+    return {"dados_status_vertente": dados_formatados}
