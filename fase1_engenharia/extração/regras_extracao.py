@@ -229,15 +229,17 @@ def extrair_acordos(texto_bruto: str, nome_arquivo: str) -> dict:
     match_n_processo = re.search(padrao_n_processo, texto_bruto)
     numero_processo =  match_n_processo.group(0) if match_n_processo else None
 
-        # 2) Nome do cliente (Reclamante ou Autor/Autora)
-    padrao_nome_cliente = r"(?:Reclamante|Autor(?:a)?)\s+([A-Za-z][A-Za-z\s\-]+?)(?:,|e|\.|\n|$)"   #inclui tanto os nomes todo maiúsculo quanto com letras minúsculas tbm
-    match_nome_cliente = re.search(padrao_nome_cliente , texto_bruto, re.IGNORECASE)
-    nome_cliente = match_nome_cliente.group(1).strip() if match_nome_cliente else ''   #caso nn ache nome, retorna uma string vazia
+        # 2) Nome do cliente (Reclamante ou Autor/Autora) - SUPORTE A AMBAS AS ORDENS
+    padrao_nome_cliente = r"(?:(?:Reclamante|Autor(?:a)?)\s+([A-Za-z][A-Za-z\s\-]+?)(?:,|e|\.|\n|$)|([A-Za-z][A-Za-z\s\-]+?)\s*,\s*(?:Reclamante|Autor(?:a)?)\b)"   
+    match_nome_cliente = re.search(padrao_nome_cliente, texto_bruto, re.IGNORECASE)
+    # Captura o Grupo 1 (ordem direta) OU o Grupo 2 (ordem inversa)
+    nome_cliente = (match_nome_cliente.group(1) or match_nome_cliente.group(2) or '').strip() if match_nome_cliente else ''   
         
-        # 3) Nome de quem está sendo processado (Reclamada ou Réu)
-    padrao_nome_processado = r"(?:Reclamada|Réu)\s+([A-Za-z][A-Za-z\s\-\.]{1,}(?:LTDA\.|S/A)?)(?:,|e|\.|\n|$)"
-    match_nome_processado = re.search(padrao_nome_processado , texto_bruto, re.IGNORECASE)
-    nome_processado = match_nome_processado.group(1).strip() if match_nome_processado else ''   
+        # 3) Nome de quem está sendo processado (Reclamada ou Réu)   - SUPORTE A AMBAS AS ORDENS
+    padrao_nome_processado = r"(?:(?:Reclamada|Réu)\s+([A-Za-z][A-Za-z\s\-\.]{1,}(?:LTDA\.|S/A)?)(?:,|e|\.|\n|$)|(?:\be\s+)?([A-Za-z][A-Za-z\s\-\.]{1,}(?:LTDA\.|S/A)?)\s*,\s*(?:Reclamada|Réu)\b)"
+    match_nome_processado = re.search(padrao_nome_processado, texto_bruto, re.IGNORECASE)
+    # Captura o Grupo 1 (ordem direta) OU o Grupo 2 (ordem inversa pós-conjunção)
+    nome_processado = (match_nome_processado.group(1) or match_nome_processado.group(2) or '').strip() if match_nome_processado else ''    
     
         # 4) Nome dos Advogados 
     padrao_advogados = r"((?:Dr\.|Dra\.)\s+(?!OAB|—|-)[^,\(\s\n]+(?:\s+(?!Dr\.|Dra\.|OAB|—|-)[^,\(\s\n]+)*)(?:[^,]*?((?:Dr\.|Dra\.)\s+(?!OAB|—|-)[^,\(\s\n]+(?:\s+(?!Dr\.|Dra\.|OAB|—|-)[^,\(\s\n]+)*))?"
