@@ -2,6 +2,7 @@ import streamlit as st
 
 # 1. Importação dos Módulos da Equipa
 from views import prazos_urgentes
+from views import view_inadimplencia
 # from views import honorarios  # Remover o comentário quando o seu colega terminar
 # from views import movimentacoes # Remover o comentário quando o colega terminar
 
@@ -45,7 +46,7 @@ def main():
         
     elif escolha == "Honorários Financeiros":
         # Placeholder (Espaço reservado) para o código do seu colega
-        st.warning("🚧 Módulo de Honorários atualmente em desenvolvimento pela equipa.")
+        view_inadimplencia.renderizar_tela()
         
     elif escolha == "Movimentações Processuais":
         # Placeholder (Espaço reservado) para o código do seu colega

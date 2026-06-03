@@ -1,0 +1,4 @@
+[server]
+port = 8505
+address = "0.0.0.0"
+baseUrlPath = "meu-dashboard"
