@@ -267,10 +267,10 @@ def extrair_acordos(texto_bruto: str, nome_arquivo: str) -> dict:
     if not nome_adv_processado:
         oab_adv_processado = None
 
-        # 8) Valor total a ser pago
-    padrao_valor_total = r"valor de\s*(R\$\s*[\d\.,]+)"
-    match_valor = re.search(padrao_valor_total, texto_bruto)
-    valor_total_acordo = match_valor.group(1) if match_valor else ''
+        # 8) Valor total a ser pago - CORRIGIDO PARA SINÔNIMOS
+    padrao_valor_total = r"(?:valor|importância|quantia|total)(?:\s+total)?\s+de\s*(R\$\s*[\d\.,]+)"
+    match_valor = re.search(padrao_valor_total, texto_bruto, re.IGNORECASE)
+    valor_total_acordo = match_valor.group(1).strip() if match_valor else ''
 
         # 9) Tipo do processo
     if "TRT" in texto_bruto or "reclamant" in texto_bruto.lower() or "Trabalho" in texto_bruto:
