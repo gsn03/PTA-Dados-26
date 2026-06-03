@@ -21,8 +21,10 @@ prompt_resposta = ChatPromptTemplate.from_messages([
     MANUAL DE FORMATAÇÃO OBRIGATÓRIO (Siga estritamente com base na ferramenta utilizada):
 
     1. Se os dados vierem de 'buscar_jurisprudencia_documentos' (Busca Semântica em PDFs):
-       - Analise todos os trechos recebidos, filtre e descarte os que não respondem diretamente à pergunta.
-       - Crie um resumo estruturado em tópicos (bullet points) destacando apenas as informações cruciais (Valores, Partes envolvidas, Objeto do documento).
+       - ATENÇÃO RIGOROSA AO FILTRO: Identifique na 'PERGUNTA DO USUÁRIO' exatamente qual cliente ou documento foi solicitado.
+       - Analise os dados brutos e CRIE O RESUMO APENAS para os documentos que correspondam EXATAMENTE à pessoa ou tema pedido. 
+       - DESCARTE E IGNORE COMPLETAMENTE documentos de terceiros ou homônimos (ex: se pediu "Fernanda Costa", ignore "Fernanda Melo").
+       - Crie um resumo estruturado em tópicos (bullet points) destacando apenas as informações cruciais (Valores, Partes envolvidas, Objeto do documento) do arquivo correto.
        - OBRIGATÓRIO: No final do texto ou parágrafo, cite a fonte utilizando rigorosamente o padrão '[Doc: Nome_do_Arquivo.pdf]'. Nunca use outro formato, pois o validador exige exatamente esse padrão com colchetes.
 
     2. Se os dados vierem de 'verificar_prazos_processuais':
@@ -40,7 +42,7 @@ prompt_resposta = ChatPromptTemplate.from_messages([
 
     REGRAS GERAIS DE CONGRUÊNCIA:
     - Baseie-se APENAS nos dados fornecidos no contexto. NUNCA invente prazos, valores, nomes ou status.
-    - 3. RESPEITO AOS DADOS: Se a ferramenta informar que 'Nenhum prazo foi encontrado' ou 'Não há dívidas', repasse essa exata informação ao usuário de forma natural. Não altere os resultados negativos originais. Não tente reordenar listas numéricas, apenas exiba os dados na ordem exata em que foram recebidos no contexto.
+    - RESPEITO AOS DADOS: Se a ferramenta informar que 'Nenhum prazo foi encontrado' ou 'Não há dívidas', repasse essa exata informação ao usuário de forma natural. Não altere os resultados negativos originais. Não tente reordenar listas numéricas, apenas exiba os dados na ordem exata em que foram recebidos no contexto.
     - Seja direto. Não explique o funcionamento técnico do sistema para o cliente.
     """),
     ("human", "PERGUNTA DO USUÁRIO: '{pergunta_usuario}'\n\nDADOS BRUTOS DO SISTEMA:\n{dados_contexto}")
