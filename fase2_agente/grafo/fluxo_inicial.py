@@ -62,8 +62,7 @@ def node_busca_wrapper(state: EstadoAgente) -> Dict[str, Any]:
     }
 
 def node_resposta_wrapper(state: EstadoAgente) -> Dict[str, Any]:
-    # A pergunta original do humano é sempre a primeira da lista de mensagens
-    pergunta_original = state["messages"][0].content
+    pergunta_original = state["messages"][-1].content
     json_busca_str = state["contexto_recuperado"]
     
     resposta_texto = executar_no_de_resposta(pergunta_original, json_busca_str)
