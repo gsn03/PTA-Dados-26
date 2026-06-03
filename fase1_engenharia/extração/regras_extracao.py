@@ -240,7 +240,7 @@ def extrair_acordos(texto_bruto: str, nome_arquivo: str) -> dict:
     nome_processado = match_nome_processado.group(1).strip() if match_nome_processado else ''   
     
         # 4) Nome dos Advogados 
-    padrao_advogados = r"((?:Dr\.|Dra\.)\s+[^,\(\s\n]+(?:\s+[^,\(\s\n]+)*)(?:[^,]*?((?:Dr\.|Dra\.)\s+[^,\(\s\n]+(?:\s+[^,\(\s\n]+)*))?"
+    padrao_advogados = r"((?:Dr\.|Dra\.)\s+(?!OAB|—|-)[^,\(\s\n]+(?:\s+(?!Dr\.|Dra\.|OAB|—|-)[^,\(\s\n]+)*)(?:[^,]*?((?:Dr\.|Dra\.)\s+(?!OAB|—|-)[^,\(\s\n]+(?:\s+(?!Dr\.|Dra\.|OAB|—|-)[^,\(\s\n]+)*))?"
     match_advogado = re.search(padrao_advogados, texto_bruto, re.IGNORECASE)
     nome_adv_cliente = match_advogado.group(1).strip() if match_advogado and match_advogado.group(1) else None  #pega o primeiro nome encontrado
     nome_adv_processado = match_advogado.group(2).strip() if match_advogado and match_advogado.group(2) else None   #pega o segundo nome encontrado

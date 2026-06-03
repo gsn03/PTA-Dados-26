@@ -5,10 +5,10 @@
     "n_processo": "3322110-44.2024.5.06.0002",
     "acusando_autor": "se comprom",
     "acusado_reu": "",
-    "nome_advogado": "Dr. Barros — OAB/PE 67.890 Dr. Vieira — OAB/PE 33.210",
-    "nome_advogado_reu": null,
+    "nome_advogado": "Dr. Barros",
+    "nome_advogado_reu": "Dr. Vieira",
     "oab_advogado": "OAB/PE 67.890",
-    "oab_advogado_reu": null,
+    "oab_advogado_reu": "OAB/PE 33.210",
     "valor_total_acordo": "",
     "tipo_processo": "Trabalhista",
     "tribunal_vara": null
