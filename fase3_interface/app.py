@@ -1,6 +1,6 @@
 """
 app.py — Cavalcanti & Melo | Interface Principal
-Integra todas as views: chatbot, prazos_urgentes, status_vertente, view_inadimplencia
+Integra todas as views: chatbot, prazos_urgentes, status_vertente, view_inadimplencia, carteira_advogados, notificador_prazos
 """
 
 import streamlit as st
@@ -127,14 +127,17 @@ with st.sidebar:
 
     st.markdown("<div style='margin-bottom:0.6rem;'></div>", unsafe_allow_html=True)
 
-    # ── Botão Notificações (desabilitado) ────────────────────────────────────
-    st.button(
+    # ── Botão Notificações ───────────────────────────────────────────────────
+    notificacoes_ativo = st.session_state.pagina_atual == "notificador_prazos"
+    if st.button(
         "🔔  Notificações prazos",
         use_container_width=True,
         key="btn_notif",
-        disabled=True,
-    )
-    st.caption("*(em desenvolvimento)*")
+        type="primary" if notificacoes_ativo else "secondary",
+    ):
+        st.session_state.pagina_atual = "notificador_prazos"
+        st.rerun()
+    
 
     # ── Logo CITi no rodapé — afastada, próxima da margem inferior ───────────
     st.markdown(
@@ -167,4 +170,8 @@ elif pagina == "inadimplencia":
 
 elif pagina == "carteira_advogados":
     from views.carteira_advogados import renderizar_tela
+    renderizar_tela()
+
+elif pagina == "notificador_prazos":
+    from views.notificador_prazos import renderizar_tela
     renderizar_tela()
