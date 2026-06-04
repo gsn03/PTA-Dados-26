@@ -1,5 +1,5 @@
 """
-app.py — Cavalcanti & Melo | Interface Principal
+app.py — Cavalcante & Melo | Interface Principal
 Integra todas as views: chatbot, prazos_urgentes, status_vertente, view_inadimplencia, notificador_prazos
 """
 
@@ -11,7 +11,7 @@ from datetime import datetime, time
 
 # ── Configuração da página ──────────────────────────────────────────────────
 st.set_page_config(
-    page_title="Cavalcanti & Melo",
+    page_title="Cavalcante & Melo",
     page_icon="⚖️",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -56,20 +56,15 @@ elif not deve_exibir_notificacao:
 
 # ── Sidebar ─────────────────────────────────────────────────────────────────
 with st.sidebar:
-    balanca_path = Path(__file__).parent / "assets" / "balanca.png"
-    col_icon, col_title = st.columns([1, 3])
-    with col_icon:
-        if balanca_path.exists():
-            st.image(str(balanca_path), width=28)
-        else:
-            st.markdown("⚖️")
-    with col_title:
-        st.markdown(
-            "<h3 style='margin:0; padding:0; line-height:1.3; font-size:0.95rem;'>Cavalcanti<br>&amp; Melo</h3>",
-            unsafe_allow_html=True,
-        )
-
-    st.markdown("<div style='margin-bottom:1.2rem;'></div>", unsafe_allow_html=True)
+    # ── Logo da Empresa ──────────────────────────────────────────────────────
+    logo_cm_path = Path(__file__).parent / "assets" / "logo_empresa.jpeg"
+    if logo_cm_path.exists():
+        # Exibe a logo ocupando a largura ideal da sidebar
+        st.image(str(logo_cm_path), use_container_width=True)
+    else:
+        # Fallback caso a imagem não seja encontrada na pasta assets
+        st.markdown("<h3 style='text-align:center; color:#44464a;'>Cavalcante & Melo</h3>", 
+            unsafe_allow_html=True)
 
     # Botões do Menu Lateral
     chatbot_ativo = st.session_state.pagina_atual == "chatbot"

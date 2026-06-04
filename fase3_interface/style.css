@@ -16,8 +16,9 @@ html, body, [data-testid="stAppViewContainer"] {
     background-color: #f5f5f5 !important;
 }
 
+/* CORREÇÃO AQUI: Aumentado de 1.2rem para 4.5rem para afastar o conteúdo da barra superior do Streamlit */
 [data-testid="stMainBlockContainer"] {
-    padding-top: 1.2rem !important;
+    padding-top: 4.5rem !important;
 }
 
 /* ---------- Barra lateral ---------- */
@@ -57,7 +58,6 @@ html, body, [data-testid="stAppViewContainer"] {
     text-align: left !important;
     transition: all 0.2s ease !important;
     cursor: pointer !important;
-    /* Sombra exterior para profundidade + Sombra interior (inset) para textura e brilho de topo */
     box-shadow: 0 3px 5px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
     margin-bottom: 0.2rem !important;
     letter-spacing: 0.01em !important;
@@ -280,4 +280,27 @@ hr {
     color: #aaaaaa !important;
     font-size: 0.75rem !important;
     text-align: center !important;
+}
+
+/* ============================================================
+   ESTILOS DO PAINEL EXECUTIVO (VIEWS)
+   ============================================================ */
+
+.solid-divider {
+    border: none !important;
+    height: 3px !important;
+    background: linear-gradient(90deg, #084d6e 0%, rgba(8,77,110,0.1) 100%) !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 1.5rem !important;
+    border-radius: 3px;
+}
+
+/* Container de Gráficos (Cartão Branco) */
+.chart-card {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 1.5rem;
+    border: 1px solid #e0e6ed;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.03);
+    height: 100%;
 }
