@@ -24,8 +24,33 @@ def get_db():
     finally:
         db.close()
 
-#Histórico de Processo (Resolve o problema dos números duplicados)
+# estrutura dos dados que o Streamlit vai enviar
+class RequisicaoChat(BaseModel):
+    pergunta: str
+    historico: List[Dict[str, Any]] = []
 
+# criamos a rota exata que o frontend está chamando
+@app.post("/ia/chat")
+async def responder_chat(requisicao: RequisicaoChat):
+    pergunta = requisicao.pergunta
+    historico = requisicao.historico
+    
+    # =====================================================================
+    # AQUI ENTRARÁ O SEU MOTOR RAG E LANGGRAPH
+    # (Por enquanto, vamos retornar uma resposta padrão apenas para testar a conexão)
+    # =====================================================================
+    
+    # Simulando uma resposta de teste
+    resposta_bot = (
+        f"A conexão foi um sucesso! Recebi sua pergunta: **'{pergunta}'**.\n\n"
+        f"Nesta etapa, o meu backend fará a busca no banco vetorial para analisar "
+        f"os documentos de João Silva, Camila Martins, e os demais PDFs que você possui."
+    )
+    
+    # 3. Retornamos o JSON no formato que o Streamlit espera ler
+    return {"resposta": resposta_bot}
+
+#Histórico de Processo (Resolve o problema dos números duplicados)
 @router.get("/processo_historico")
 def buscar_historico_processo_ia(numero_processo: str, nome_cliente: str, db: Session = Depends(get_db)):
     
