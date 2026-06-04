@@ -1,23 +1,34 @@
+"""
+views/prazos_urgentes.py — Sobrecarga de Prazos por Responsável
+Página única (sem abas) com todos os gráficos.
+Cores: cinza #44464a | amarelo #ffcc00
+"""
+
 import os
 import requests
+import streamlit as st
 import pandas as pd
 import plotly.express as px
-import streamlit as st
+import plotly.graph_objects as go
 from pathlib import Path
 from dotenv import load_dotenv
 
-# 1. Ajuste de Arquitetura: Forçando a leitura do .env na raiz do projeto
-# views(1) -> fase3_interface(2) -> raiz(3)
+# ── Configuração de Variáveis de Ambiente e API ──────────────────────────────
 pasta_raiz = Path(__file__).resolve().parent.parent.parent
 load_dotenv(pasta_raiz / ".env", override=True)
 
-# URL da API (Com o Plano B de segurança)
 API_URL = os.getenv("API_KEY", "http://127.0.0.1:8000")
 
+# ── Paleta ───────────────────────────────────────────────────────────────────
+COR_PRIMARIA   = "#44464a"   # cinza escuro
+COR_AMARELO    = "#ffcc00"   # amarelo
+COR_FUNDO      = "#f5f5f5"
+COR_FUNDO_PLOT = "#ffffff"
+COR_GRADE      = "#ebebeb"
+
+# ── Função de Ligação com o Banco de Dados (API) ─────────────────────────────
 def buscar_dados_prazos(dias: int):
-    """
-    Faz a requisição HTTP e trata erros de conexão.
-    """
+    """Faz a requisição HTTP para a API real e trata os erros."""
     try:
         resposta = requests.get(f"{API_URL}/ia/prazos_urgentes", params={"dias": dias}, timeout=10)
         if resposta.status_code == 200:
@@ -26,80 +37,267 @@ def buscar_dados_prazos(dias: int):
             st.error(f"Erro na API: Código {resposta.status_code}")
             return None
     except requests.exceptions.ConnectionError:
-        st.error("Falha de conexão: O servidor da API não está respondendo. Verifique se o FastAPI está ligado.")
+        st.error("Falha de conexão: O servidor da API (FastAPI) não está ligado.")
         return None
     except Exception as e:
         st.error(f"Erro inesperado: {e}")
         return None
 
-def renderizar_tela():
-    """
-    Função principal que será chamada pelo app.py.
-    """
-    st.header("⚖️ Sobrecarga de Prazos por Responsável")
-    st.markdown("Acompanhe o volume de urgências atribuídas a cada advogado nos próximos dias.")
+# ── Gráfico de barras horizontais: volume por advogado ───────────────────────
+def _grafico_volume_advogado(df: pd.DataFrame):
+    contagem = (
+        df.groupby("Responsável")
+        .size()
+        .reset_index(name="Quantidade")
+        .sort_values("Quantidade", ascending=True)
+    )
 
-    # Filtro de dias interativo
-    dias_filtro = st.slider("Analisar prazos para os próximos (dias):", min_value=1, max_value=30, value=7)
+    fig = go.Figure(
+        go.Bar(
+            y=contagem["Responsável"],
+            x=contagem["Quantidade"],
+            orientation="h",
+            marker=dict(
+                color=COR_PRIMARIA,
+                line=dict(color=COR_PRIMARIA, width=0),
+            ),
+            text=contagem["Quantidade"],
+            textposition="outside",
+            textfont=dict(color=COR_PRIMARIA, size=13),
+        )
+    )
 
-    # Indicador de carregamento
-    with st.spinner("Analisando a carga de trabalho da equipe..."):
-        dados_prazos = buscar_dados_prazos(dias=dias_filtro)
+    fig.update_layout(
+        title=dict(
+            text="<b>Volumes de prazos urgentes por Advogado</b>",
+            font=dict(color=COR_AMARELO, size=15),
+            x=0,
+        ),
+        plot_bgcolor=COR_FUNDO_PLOT,
+        paper_bgcolor=COR_FUNDO_PLOT,
+        xaxis=dict(
+            gridcolor=COR_GRADE,
+            zerolinecolor=COR_GRADE,
+            tickfont=dict(color=COR_PRIMARIA),
+        ),
+        yaxis=dict(
+            tickfont=dict(color=COR_PRIMARIA),
+            automargin=True,
+        ),
+        margin=dict(l=10, r=40, t=50, b=20),
+        height=300,
+    )
 
-    # Tratar o estado vazio
+    return fig
+
+
+# ── Gráfico de pizza/donut: distribuição por fase ────────────────────────────
+def _grafico_fases(df: pd.DataFrame):
+    por_fase = df.groupby("Fase Atual").size().reset_index(name="Quantidade")
+
+    fig = px.pie(
+        por_fase,
+        names="Fase Atual",
+        values="Quantidade",
+        hole=0.45,
+        color_discrete_sequence=[
+            COR_PRIMARIA, COR_AMARELO, "#6b6d72",
+            "#ffd740", "#2e2f31", "#b8a000",
+        ],
+    )
+
+    fig.update_traces(
+        textfont_size=12,
+        marker=dict(line=dict(color=COR_FUNDO_PLOT, width=2)),
+    )
+
+    fig.update_layout(
+        title=dict(
+            text="<b>Distribuição por Fase Processual</b>",
+            font=dict(color=COR_AMARELO, size=15),
+            x=0,
+        ),
+        plot_bgcolor=COR_FUNDO_PLOT,
+        paper_bgcolor=COR_FUNDO_PLOT,
+        legend=dict(
+            font=dict(color=COR_PRIMARIA, size=11),
+            orientation="v",
+        ),
+        margin=dict(l=10, r=10, t=50, b=20),
+        height=300,
+    )
+
+    return fig
+
+
+# ── Gráfico de linha: prazos por dia de vencimento ───────────────────────────
+def _grafico_timeline(df: pd.DataFrame):
+    df_copia = df.copy()
+    df_copia["Data"] = pd.to_datetime(df_copia["Vencimento"], format="%d/%m/%Y")
+    por_dia = (
+        df_copia.groupby("Data")
+        .size()
+        .reset_index(name="Quantidade")
+        .sort_values("Data")
+    )
+
+    fig = go.Figure(
+        go.Scatter(
+            x=por_dia["Data"],
+            y=por_dia["Quantidade"],
+            mode="lines+markers",
+            line=dict(color=COR_PRIMARIA, width=2.5),
+            marker=dict(color=COR_AMARELO, size=8, line=dict(color=COR_PRIMARIA, width=1.5)),
+            fill="tozeroy",
+            fillcolor="rgba(68,70,74,0.08)",
+        )
+    )
+
+    fig.update_layout(
+        title=dict(
+            text="<b>Prazos por Data de Vencimento</b>",
+            font=dict(color=COR_AMARELO, size=15),
+            x=0,
+        ),
+        plot_bgcolor=COR_FUNDO_PLOT,
+        paper_bgcolor=COR_FUNDO_PLOT,
+        xaxis=dict(
+            gridcolor=COR_GRADE,
+            tickfont=dict(color=COR_PRIMARIA),
+            tickformat="%d/%m",
+        ),
+        yaxis=dict(
+            gridcolor=COR_GRADE,
+            tickfont=dict(color=COR_PRIMARIA),
+        ),
+        margin=dict(l=10, r=10, t=50, b=20),
+        height=280,
+    )
+
+    return fig
+
+
+# ── Tabela detalhada ──────────────────────────────────────────────────────────
+def _tabela_detalhada(df: pd.DataFrame):
+    st.markdown(
+        f"<p style='font-weight:700; color:{COR_AMARELO}; font-size:1rem;'>"
+        "Detalhamento individual dos processos urgentes:</p>",
+        unsafe_allow_html=True,
+    )
+
+    colunas_exibir = ["Responsável", "Vencimento", "Processo", "Cliente", "Fase Atual"]
+    df_exib = df[colunas_exibir].reset_index(drop=True)
+
+    st.dataframe(
+        df_exib,
+        use_container_width=True,
+        height=280,
+        hide_index=True,
+        column_config={
+            "Responsável": st.column_config.TextColumn("Responsável", width="medium"),
+            "Vencimento":  st.column_config.TextColumn("Vencimento",  width="small"),
+            "Processo":    st.column_config.TextColumn("Processo",    width="large"),
+            "Cliente":     st.column_config.TextColumn("Cliente",     width="medium"),
+            "Fase Atual":  st.column_config.TextColumn("Fase Atual",  width="medium"),
+        },
+    )
+
+
+# ── View principal ────────────────────────────────────────────────────────────
+def render():
+    # Correção do path para aceder à pasta assets corretamente
+    balanca_path = Path(__file__).resolve().parent.parent / "assets" / "balanca.png"
+
+    # Título da página
+    col_t1, col_t2, col_t3 = st.columns([3, 1, 3])
+    with col_t2:
+        if balanca_path.exists():
+            st.image(str(balanca_path), width=40)
+            
+    st.markdown(
+        f"<h2 style='text-align:center; color:{COR_PRIMARIA}; margin-top:-2rem;'>"
+        "Sobrecarga de Prazos por Responsável</h2>",
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("---")
+
+    # ── Slider de janela de dias ─────────────────────────────────────────────
+    st.markdown(
+        f"<p style='color:{COR_PRIMARIA}; font-weight:600;'>"
+        "Analisar prazos para os próximos (dias):</p>",
+        unsafe_allow_html=True,
+    )
+    janela = st.slider(
+        label="janela_dias",
+        min_value=1,
+        max_value=90,
+        value=7,
+        step=1,
+        label_visibility="collapsed",
+    )
+
+    # ── Carregar dados reais da API ──────────────────────────────────────────
+    with st.spinner("A consultar os prazos processuais no banco de dados..."):
+        dados_prazos = buscar_dados_prazos(dias=janela)
+        
+    # Tratamento de ecrã vazio
     if dados_prazos is None:
-        return 
+        return
         
     if len(dados_prazos) == 0:
-        st.success(f"Excelente notícia! Não há nenhum prazo urgente para a equipe nos próximos {dias_filtro} dias.")
+        st.success(f"Excelente notícia! Não há prazos urgentes para os próximos {janela} dias.")
         return
 
-    # Parsear o JSON para DataFrame do Pandas
+    # Transformar em DataFrame e preparar colunas para o design
     df = pd.DataFrame(dados_prazos)
     
-    # Se algum processo não tiver advogado, evitamos que o gráfico quebre
-    df['advogado'] = df['advogado'].fillna("Não Atribuído")
+    # Renomear as colunas da API para os nomes que os gráficos esperam
+    df.rename(columns={
+        'advogado': 'Responsável',
+        'prazo': 'Vencimento',
+        'numero_processo': 'Processo',
+        'nome_cliente': 'Cliente',
+        'fase_atual': 'Fase Atual'
+    }, inplace=True)
     
-    # Formatação de data para a tabela
-    df['prazo'] = pd.to_datetime(df['prazo']).dt.strftime('%d/%m/%Y')
+    # Preencher advogados vazios
+    df['Responsável'] = df['Responsável'].fillna("Não Atribuído")
+    
+    # Formatar a data para o formato brasileiro para bater com o código do timeline
+    df['Vencimento'] = pd.to_datetime(df['Vencimento']).dt.strftime('%d/%m/%Y')
 
-    st.subheader(f"Total de {len(dados_prazos)} prazos na janela selecionada")
-    
-    # Agrupamento: Quantos prazos cada advogado tem
-    contagem_por_advogado = df.groupby('advogado').size().reset_index(name='quantidade')
-    
-    # Ordenar do mais sobrecarregado para o menos
-    contagem_por_advogado = contagem_por_advogado.sort_values(by='quantidade', ascending=True)
 
-    # Gráfico Plotly: Sobrecarga por Responsável
-    fig = px.bar(
-        contagem_por_advogado, 
-        x='quantidade', 
-        y='advogado',
-        orientation='h', # Gráfico horizontal é melhor para ler nomes de pessoas
-        title="Volume de Prazos Urgentes por Advogado",
-        labels={'advogado': 'Equipe', 'quantidade': 'Quantidade de Prazos'},
-        color_discrete_sequence=['#e67e22'], # Cor de atenção (Laranja)
-        text_auto=True
+    # ── Resumo ───────────────────────────────────────────────────────────────
+    total = len(df)
+    st.markdown(
+        f"<p style='font-weight:700; font-size:1.05rem; color:{COR_PRIMARIA};'>"
+        f"Total de <span style='color:{COR_AMARELO};'>{total} prazos</span> "
+        f"na janela selecionada</p>",
+        unsafe_allow_html=True,
     )
-    
-    # Limpeza visual do gráfico
-    fig.update_layout(yaxis_title=None)
-    
-    st.plotly_chart(fig, use_container_width=True)
 
-    st.caption("Detalhamento individual dos processos urgentes:")
-    
-    # Exibe a tabela para o advogado saber exatamente quais são os processos dele
-    st.dataframe(
-        df[['advogado', 'prazo', 'numero_processo', 'nome_cliente', 'fase_atual']],
-        column_config={
-            "advogado": "Responsável",
-            "prazo": "Vencimento",
-            "numero_processo": "Processo",
-            "nome_cliente": "Cliente",
-            "fase_atual": "Fase Atual"
-        },
-        hide_index=True,
-        use_container_width=True
+    # ── Linha 1: Barras horizontais + Pizza ──────────────────────────────────
+    col_bar, col_pie = st.columns([3, 2])
+    with col_bar:
+        st.plotly_chart(
+            _grafico_volume_advogado(df),
+            use_container_width=True,
+            config={"displaylogo": False},
+        )
+    with col_pie:
+        st.plotly_chart(
+            _grafico_fases(df),
+            use_container_width=True,
+            config={"displaylogo": False},
+        )
+
+    # ── Linha 2: Timeline ────────────────────────────────────────────────────
+    st.plotly_chart(
+        _grafico_timeline(df),
+        use_container_width=True,
+        config={"displaylogo": False},
     )
+
+    # ── Linha 3: Tabela detalhada ─────────────────────────────────────────────
+    _tabela_detalhada(df)

@@ -1,56 +1,88 @@
+"""
+app.py — Cavalcanti & Melo | Interface Principal
+Passo 1: Layout, sidebar, navegação entre views
+"""
+
 import streamlit as st
+from pathlib import Path
 
-# 1. Importação dos Módulos da Equipa
-from views import prazos_urgentes
-from views import view_inadimplencia
-# from views import honorarios  # Remover o comentário quando o seu colega terminar
-# from views import movimentacoes # Remover o comentário quando o colega terminar
-
-# 2. Configuração Global da Página (DEVE ser a primeira instrução Streamlit)
+# ── Configuração da página ──────────────────────────────────────────────────
 st.set_page_config(
-    page_title="Dashboard | PTA Dados",
+    page_title="Cavalcanti & Melo",
     page_icon="⚖️",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
-def main():
-    # 3. Construção do Menu Lateral (Sidebar)
-    st.sidebar.title("Navegação Central")
-    st.sidebar.markdown("Selecione o módulo que deseja visualizar:")
+# ── Carregar CSS global ─────────────────────────────────────────────────────
+def load_css():
+    css_path = Path(__file__).parent / "style.css"
+    if css_path.exists():
+        with open(css_path) as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
-    # Lista de opções disponíveis no menu
-    opcoes_menu = [
-        "Início", 
-        "Prazos Urgentes", 
-        "Honorários Financeiros", 
-        "Movimentações Processuais"
-    ]
-    
-    escolha = st.sidebar.radio("Módulos:", opcoes_menu)
+load_css()
 
-    st.sidebar.markdown("---")
-    st.sidebar.caption("Agente Jurídico Automático - Equipa Gustavo")
+# ── Inicializar session_state ───────────────────────────────────────────────
+if "pagina_atual" not in st.session_state:
+    st.session_state.pagina_atual = "chatbot"
 
-    # 4. Roteador de Ecrãs (A Arquitetura Modular)
-    if escolha == "Início":
-        st.title("🏛️ Bem-vindo ao Sistema de Gestão Jurídica")
-        st.markdown("""
-        Este painel consolida os dados do escritório em tempo real.
-        Utilize o menu lateral para navegar entre os módulos analíticos desenvolvidos pela equipa.
-        """)
-        
-    elif escolha == "Prazos Urgentes":
-        # Aqui o Roteador chama o seu módulo isolado
-        prazos_urgentes.renderizar_tela()
-        
-    elif escolha == "Honorários Financeiros":
-        # Placeholder (Espaço reservado) para o código do seu colega
-        view_inadimplencia.renderizar_tela()
-        
-    elif escolha == "Movimentações Processuais":
-        # Placeholder (Espaço reservado) para o código do seu colega
-        st.warning("🚧 Módulo de Movimentações atualmente em desenvolvimento pela equipa.")
+if "mostrar_historico" not in st.session_state:
+    st.session_state.mostrar_historico = True
 
-if __name__ == "__main__":
-    main()
+# ── Sidebar ─────────────────────────────────────────────────────────────────
+with st.sidebar:
+    # Logo CITi no topo
+    logo_path = Path(__file__).parent / "assets" / "logo_citi.png"
+    if logo_path.exists():
+        st.image(str(logo_path), width=80)
+
+    st.markdown("---")
+
+    # Título "Serviços" com ícone de engrenagem
+    engrenagem_path = Path(__file__).parent / "assets" / "engrenagem.png"
+    col_icon, col_title = st.columns([1, 3])
+    with col_icon:
+        if engrenagem_path.exists():
+            st.image(str(engrenagem_path), width=32)
+    with col_title:
+        st.markdown("### Serviços")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # Botão ChatBot
+    if st.button("💬  ChatBot", use_container_width=True, key="btn_chatbot"):
+        st.session_state.pagina_atual = "chatbot"
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # Botão Gráficos
+    if st.button("📊  Gráficos", use_container_width=True, key="btn_graficos"):
+        st.session_state.pagina_atual = "graficos"
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # Botão Notificações Prazos (desabilitado por enquanto — em desenvolvimento)
+    st.button(
+        "🔔  Notificações prazos",
+        use_container_width=True,
+        key="btn_notif",
+        disabled=True,
+    )
+    st.caption("*(em desenvolvimento)*")
+
+    # Logo CITi no rodapé da sidebar
+    st.markdown("<br><br><br>", unsafe_allow_html=True)
+    if logo_path.exists():
+        st.image(str(logo_path), width=60)
+
+# ── Roteamento de páginas ───────────────────────────────────────────────────
+pagina = st.session_state.pagina_atual
+
+if pagina == "chatbot":
+    from views.chatbot import render
+    render()
+
+elif pagina == "graficos":
+    from views.prazos_urgentes import render
+    render()

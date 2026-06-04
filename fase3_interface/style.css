@@ -1,0 +1,238 @@
+/* ============================================================
+   CAVALCANTI & MELO — Global Style
+   Cores: Cinza escuro #44464a | Amarelo #ffcc00 | Fundo #f5f5f5
+   ============================================================ */
+
+/* ---------- Reset & Fundo geral ---------- */
+html, body, [data-testid="stAppViewContainer"] {
+    background-color: #f5f5f5 !important;
+}
+
+[data-testid="stMain"] {
+    background-color: #f5f5f5 !important;
+}
+
+/* Remove padding excessivo do topo */
+[data-testid="stMainBlockContainer"] {
+    padding-top: 1rem !important;
+}
+
+/* ---------- Barra lateral (Serviços) ---------- */
+[data-testid="stSidebar"] {
+    background-color: #ffffff !important;
+    border-right: 1px solid #e0e0e0 !important;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.06) !important;
+}
+
+[data-testid="stSidebar"] > div:first-child {
+    padding-top: 1.5rem !important;
+}
+
+/* Título "Serviços" na sidebar */
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3 {
+    color: #44464a !important;
+    font-weight: 700 !important;
+}
+
+/* ---------- Botões da sidebar (pills) ---------- */
+[data-testid="stSidebar"] .stButton > button {
+    background-color: #44464a !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 50px !important;
+    padding: 0.6rem 1.4rem !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+    width: 100% !important;
+    text-align: center !important;
+    transition: background-color 0.2s ease, transform 0.1s ease !important;
+    cursor: pointer !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
+    margin-bottom: 0.3rem !important;
+}
+
+[data-testid="stSidebar"] .stButton > button:hover {
+    background-color: #ffcc00 !important;
+    color: #44464a !important;
+    transform: translateX(3px) !important;
+}
+
+/* Botão ativo/selecionado */
+[data-testid="stSidebar"] .stButton > button:focus {
+    background-color: #ffcc00 !important;
+    color: #44464a !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(255,204,0,0.3) !important;
+}
+
+/* ---------- Cabeçalho principal (título da página) ---------- */
+h1 {
+    color: #44464a !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+}
+
+/* ---------- Slider (prazos) ---------- */
+[data-testid="stSlider"] > div > div > div > div {
+    background-color: #ffcc00 !important;
+}
+
+[data-testid="stSlider"] [data-testid="stThumbValue"] {
+    color: #44464a !important;
+    font-weight: 700 !important;
+}
+
+/* Track preenchido */
+[data-testid="stSlider"] [role="slider"] {
+    background-color: #ffcc00 !important;
+    border: 2px solid #44464a !important;
+}
+
+/* ---------- Textos e labels gerais ---------- */
+.stMarkdown p {
+    color: #44464a !important;
+}
+
+label[data-testid="stWidgetLabel"] {
+    color: #44464a !important;
+    font-weight: 600 !important;
+}
+
+/* ---------- Tabela de dados ---------- */
+[data-testid="stDataFrame"] {
+    border-radius: 10px !important;
+    overflow: hidden !important;
+}
+
+/* ---------- Chat input (barra de texto) ---------- */
+[data-testid="stChatInput"] {
+    background-color: #ffffff !important;
+    border-radius: 50px !important;
+    border: 2px solid #e0e0e0 !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08) !important;
+}
+
+[data-testid="stChatInput"]:focus-within {
+    border-color: #ffcc00 !important;
+    box-shadow: 0 0 0 3px rgba(255,204,0,0.25) !important;
+}
+
+[data-testid="stChatInput"] textarea {
+    font-size: 0.95rem !important;
+    color: #44464a !important;
+}
+
+/* ---------- Mensagens do chat ---------- */
+[data-testid="stChatMessage"] {
+    background-color: #ffffff !important;
+    border-radius: 14px !important;
+    border: 1px solid #ebebeb !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* Assistente: badge amarelo */
+[data-testid="stChatMessage"][data-testid*="assistant"] {
+    border-left: 4px solid #ffcc00 !important;
+}
+
+/* ---------- Badge de notificação (número) ---------- */
+.notif-badge {
+    background-color: #ffcc00;
+    color: #44464a;
+    border-radius: 50%;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0 6px;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+/* ---------- Caixa de boas-vindas (chatbot) ---------- */
+.welcome-box {
+    background-color: #ececec;
+    border-radius: 18px;
+    padding: 2rem 3rem;
+    text-align: center;
+    color: #888;
+    font-size: 1.1rem;
+    line-height: 1.7;
+    margin: 2rem auto;
+    max-width: 720px;
+    min-height: 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ---------- Histórico de chat (coluna direita) ---------- */
+.historico-titulo {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: #44464a;
+    margin-bottom: 1rem;
+}
+
+.historico-item {
+    padding: 0.4rem 0;
+    border-bottom: 1px solid #f0f0f0;
+    color: #44464a;
+    font-size: 0.9rem;
+}
+
+.historico-item span {
+    color: #ffcc00;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.historico-item span:hover {
+    text-decoration: underline;
+}
+
+/* ---------- Gráficos Plotly ---------- */
+.js-plotly-plot .plotly {
+    border-radius: 10px !important;
+}
+
+/* ---------- Métricas/cards de resumo ---------- */
+[data-testid="stMetric"] {
+    background-color: #ffffff !important;
+    border-radius: 12px !important;
+    padding: 1rem !important;
+    border: 1px solid #e8e8e8 !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+}
+
+[data-testid="stMetricValue"] {
+    color: #44464a !important;
+    font-weight: 700 !important;
+}
+
+[data-testid="stMetricLabel"] {
+    color: #888 !important;
+}
+
+/* ---------- Divisores ---------- */
+hr {
+    border-color: #e0e0e0 !important;
+}
+
+/* ---------- Scrollbar ---------- */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #f5f5f5;
+}
+::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #44464a;
+}

@@ -2,3 +2,9 @@
 port = 8505
 address = "0.0.0.0"
 baseUrlPath = "meu-dashboard"
+[theme]
+base="light"
+primaryColor="#1E2B4D"
+backgroundColor="#f4f6f9"
+secondaryBackgroundColor="#f8f9fa"
+textColor="#44464a"
