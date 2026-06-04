@@ -21,7 +21,7 @@ API_URL = os.getenv("API_KEY", "http://127.0.0.1:8000")
 
 # ── Paleta ───────────────────────────────────────────────────────────────────
 COR_PRIMARIA   = "#44464a"   # cinza escuro
-COR_AMARELO    = "#084d6e"   # amarelo
+COR_AMARELO    = "#084d6e"   # azul petróleo (mantido o nome da variável original)
 COR_FUNDO      = "#f5f5f5"
 COR_FUNDO_PLOT = "#ffffff"
 COR_GRADE      = "#ebebeb"
@@ -141,7 +141,7 @@ def _grafico_timeline(df: pd.DataFrame):
             tickfont=dict(color=COR_PRIMARIA),
         ),
         margin=dict(l=10, r=10, t=50, b=20),
-        height=280,
+        height=320, # Ajustado para alinhar visualmente com o gráfico de barras
     )
 
     return fig
@@ -150,7 +150,7 @@ def _grafico_timeline(df: pd.DataFrame):
 # ── Tabela detalhada ──────────────────────────────────────────────────────────
 def _tabela_detalhada(df: pd.DataFrame):
     st.markdown(
-        f"<p style='font-weight:700; color:{COR_AMARELO}; font-size:1rem;'>"
+        f"<p style='font-weight:700; color:{COR_AMARELO}; font-size:1rem; margin-top: 1rem;'>"
         "Detalhamento individual dos processos urgentes:</p>",
         unsafe_allow_html=True,
     )
@@ -175,38 +175,28 @@ def _tabela_detalhada(df: pd.DataFrame):
 
 # ── View principal ────────────────────────────────────────────────────────────
 def render():
-    # Ícone de balança do título
-    balanca_path = Path(__file__).resolve().parent.parent / "assets" / "balanca.png"
+    # Carregar dados com uma janela inicial para evitar que a interface quebre antes do slider
+    janela = 7
 
-    col_t1, col_t2, col_t3 = st.columns([3, 1, 3])
-    with col_t2:
-        if balanca_path.exists():
-            st.image(str(balanca_path), width=40)
+    # ── TOPO: Filtro e Métrica (Lado a Lado) ─────────────────────────────────
+    col_filtro, col_metrica = st.columns([2, 1])
 
-    st.markdown(
-        f"<h2 style='text-align:center; color:{COR_PRIMARIA}; margin-top:-2rem;'>"
-        "Sobrecarga de Prazos por Responsável</h2>",
-        unsafe_allow_html=True,
-    )
+    with col_filtro:
+        st.markdown(
+            f"<p style='color:{COR_PRIMARIA}; font-weight:600; margin-top:0.5rem;'>"
+            "Analisar prazos para os próximos (dias):</p>",
+            unsafe_allow_html=True,
+        )
+        janela = st.slider(
+            label="janela_dias",
+            min_value=1,
+            max_value=90,
+            value=7,
+            step=1,
+            label_visibility="collapsed",
+        )
 
-    st.markdown("---")
-
-    # ── Slider de janela de dias ─────────────────────────────────────────────
-    st.markdown(
-        f"<p style='color:{COR_PRIMARIA}; font-weight:600;'>"
-        "Analisar prazos para os próximos (dias):</p>",
-        unsafe_allow_html=True,
-    )
-    janela = st.slider(
-        label="janela_dias",
-        min_value=1,
-        max_value=90,
-        value=7,
-        step=1,
-        label_visibility="collapsed",
-    )
-
-    # ── Carregar dados reais da API ──────────────────────────────────────────
+    # Carregar dados
     with st.spinner("A consultar os prazos processuais no banco de dados..."):
         dados_prazos = buscar_dados_prazos(dias=janela)
 
@@ -217,9 +207,8 @@ def render():
         st.success(f"Excelente notícia! Não há prazos urgentes para os próximos {janela} dias.")
         return
 
-    # Transformar em DataFrame e preparar colunas
+    # Tratamento de dados
     df = pd.DataFrame(dados_prazos)
-
     df.rename(columns={
         "advogado":        "Responsável",
         "prazo":           "Vencimento",
@@ -230,29 +219,33 @@ def render():
 
     df["Responsável"] = df["Responsável"].fillna("Não Atribuído")
     df["Vencimento"]  = pd.to_datetime(df["Vencimento"]).dt.strftime("%d/%m/%Y")
-
-    # ── Resumo ───────────────────────────────────────────────────────────────
     total = len(df)
-    st.markdown(
-        f"<p style='font-weight:700; font-size:1.05rem; color:{COR_PRIMARIA};'>"
-        f"Total de <span style='color:{COR_AMARELO};'>{total} prazos</span> "
-        f"na janela selecionada</p>",
-        unsafe_allow_html=True,
-    )
 
-    # ── Gráfico de barras horizontais (ocupa largura total) ──────────────────
-    st.plotly_chart(
-        _grafico_volume_advogado(df),
-        use_container_width=True,
-        config={"displaylogo": False},
-    )
+    with col_metrica:
+        st.metric(label="Total de Prazos na Janela Selecionada", value=str(total))
 
-    # ── Timeline ─────────────────────────────────────────────────────────────
-    st.plotly_chart(
-        _grafico_timeline(df),
-        use_container_width=True,
-        config={"displaylogo": False},
-    )
+    st.markdown("<br>", unsafe_allow_html=True)
 
-    # ── Tabela detalhada ──────────────────────────────────────────────────────
+    # ── CORPO: Gráficos (Lado a Lado) ────────────────────────────────────────
+    col_grafico1, col_grafico2 = st.columns(2)
+
+    with col_grafico1:
+        st.markdown("<div class='chart-card'>", unsafe_allow_html=True)
+        st.plotly_chart(
+            _grafico_volume_advogado(df),
+            use_container_width=True,
+            config={"displaylogo": False},
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with col_grafico2:
+        st.markdown("<div class='chart-card'>", unsafe_allow_html=True)
+        st.plotly_chart(
+            _grafico_timeline(df),
+            use_container_width=True,
+            config={"displaylogo": False},
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    # ── Tabela detalhada no fundo ─────────────────────────────────────────────
     _tabela_detalhada(df)

@@ -74,27 +74,6 @@ def _tabela_processos(processos: list):
 
 # ── View principal ────────────────────────────────────────────────────────────
 def renderizar_tela():
-    # ── Título ────────────────────────────────────────────────────────────────
-    balanca_path = Path(__file__).resolve().parent.parent / "assets" / "balanca.png"
-
-    col_t1, col_t2, col_t3 = st.columns([3, 1, 3])
-    with col_t2:
-        if balanca_path.exists():
-            st.image(str(balanca_path), width=40)
-
-    st.markdown(
-        f"<h2 style='text-align:center; color:{COR_PRIMARIA}; margin-top:-2rem;'>"
-        "Notificador de Prazos 🔔</h2>",
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        "<p style='text-align:center; color:#777;'>"
-        "Processos em estado crítico e de atenção, "
-        "conforme o relatório matinal enviado à equipe.</p>",
-        unsafe_allow_html=True,
-    )
-    st.markdown("---")
-
     # ── Buscar dados das duas zonas ───────────────────────────────────────────
     with st.spinner("Verificando prazos críticos e de atenção..."):
         processos_perigo  = _buscar_alertas(dias_exatos=5)
@@ -103,13 +82,36 @@ def renderizar_tela():
     if processos_perigo is None or processos_atencao is None:
         return
 
-    # ── Zona de Perigo (5 dias) ───────────────────────────────────────────────
     total_perigo = len(processos_perigo)
+    total_atencao = len(processos_atencao)
+
+    # ── TOPO: Contexto e Métricas (Lado a Lado) ──────────────────────────────
+    col_texto, col_m1, col_m2 = st.columns([2, 1, 1])
+
+    with col_texto:
+        st.markdown(
+            f"<p style='color:{COR_PRIMARIA}; font-weight:600; margin-top:0.5rem; margin-bottom:0.5rem;'>"
+            "Notificador de Prazos 🔔</p>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            "<p style='color:#777; margin-bottom:0;'>"
+            "Processos em estado crítico e de atenção, conforme o relatório matinal enviado à equipe.</p>",
+            unsafe_allow_html=True,
+        )
+
+    with col_m1:
+        st.metric(label="Zona de Perigo (5 dias)", value=str(total_perigo))
+
+    with col_m2:
+        st.metric(label="Zona de Atenção (15 dias)", value=str(total_atencao))
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ── Zona de Perigo (5 dias) ───────────────────────────────────────────────
     st.markdown(
-        f"<h3 style='color:{COR_PRIMARIA};'>"
-        f"🔴 Zona de Perigo — Vencimento em 5 dias "
-        f"<span style='color:{COR_AMARELO}; font-size:1rem;'>"
-        f"({total_perigo} processo(s))</span></h3>",
+        f"<p style='font-weight:700; color:{COR_PRIMARIA}; font-size:1rem;'>"
+        "🔴 Zona de Perigo — Vencimento em 5 dias</p>",
         unsafe_allow_html=True,
     )
     _tabela_processos(processos_perigo)
@@ -117,12 +119,9 @@ def renderizar_tela():
     st.markdown("<div style='margin-bottom:1.5rem;'></div>", unsafe_allow_html=True)
 
     # ── Zona de Atenção (15 dias) ─────────────────────────────────────────────
-    total_atencao = len(processos_atencao)
     st.markdown(
-        f"<h3 style='color:{COR_PRIMARIA};'>"
-        f"🟡 Zona de Atenção — Vencimento em 15 dias "
-        f"<span style='color:{COR_AMARELO}; font-size:1rem;'>"
-        f"({total_atencao} processo(s))</span></h3>",
+        f"<p style='font-weight:700; color:{COR_PRIMARIA}; font-size:1rem;'>"
+        "🟡 Zona de Atenção — Vencimento em 15 dias</p>",
         unsafe_allow_html=True,
     )
     _tabela_processos(processos_atencao)
