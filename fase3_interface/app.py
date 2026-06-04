@@ -5,6 +5,9 @@ Integra todas as views: chatbot, prazos_urgentes, status_vertente, view_inadimpl
 
 import streamlit as st
 from pathlib import Path
+import os
+import requests
+from datetime import datetime, time
 
 # ── Configuração da página ──────────────────────────────────────────────────
 st.set_page_config(
@@ -30,9 +33,29 @@ if "pagina_atual" not in st.session_state:
 if "mostrar_historico" not in st.session_state:
     st.session_state.mostrar_historico = False
 
+if "ultima_data_interacao" not in st.session_state:
+    st.session_state.ultima_data_interacao = None
+
+# ── Controle de Horário e Interação (8:30h da manhã) ────────────────────────
+agora = datetime.now()
+hoje = agora.date()
+horario_gatilho = time(8, 30)
+
+deve_exibir_notificacao = agora.time() >= horario_gatilho and st.session_state.ultima_data_interacao != hoje
+
+if deve_exibir_notificacao and "qtd_criticos" not in st.session_state:
+    API_URL = os.getenv("API_KEY", "http://127.0.0.1:8000")
+    try:
+        resposta = requests.get(f"{API_URL}/ia/alertas_email", params={"dias_exatos": 5}, timeout=5)
+        processos_criticos = resposta.json().get("processos", []) if resposta.status_code == 200 else []
+        st.session_state.qtd_criticos = len(processos_criticos)
+    except Exception:
+        st.session_state.qtd_criticos = 0
+elif not deve_exibir_notificacao:
+    st.session_state.qtd_criticos = 0
+
 # ── Sidebar ─────────────────────────────────────────────────────────────────
 with st.sidebar:
-    # Logo + nome da empresa "Cavalcanti & Melo"
     balanca_path = Path(__file__).parent / "assets" / "balanca.png"
     col_icon, col_title = st.columns([1, 3])
     with col_icon:
@@ -48,100 +71,84 @@ with st.sidebar:
 
     st.markdown("<div style='margin-bottom:1.2rem;'></div>", unsafe_allow_html=True)
 
-    # ── Botão ChatBot ────────────────────────────────────────────────────────
+    # Botões do Menu Lateral
     chatbot_ativo = st.session_state.pagina_atual == "chatbot"
-    if st.button(
-        "💬  ChatBot",
-        use_container_width=True,
-        key="btn_chatbot",
-        type="primary" if chatbot_ativo else "secondary",
-    ):
+    if st.button("💬  ChatBot", use_container_width=True, key="btn_chatbot", type="primary" if chatbot_ativo else "secondary"):
         st.session_state.pagina_atual = "chatbot"
         st.rerun()
 
     st.markdown("<div style='margin-bottom:0.6rem;'></div>", unsafe_allow_html=True)
 
-    # ── Botão Gráficos (submenu) ─────────────────────────────────────────────
-    graficos_ativo = st.session_state.pagina_atual in (
-        "prazos_urgentes", "status_vertente", "inadimplencia", "carteira_advogados"
-    )
-    if st.button(
-        "📊  Gráficos",
-        use_container_width=True,
-        key="btn_graficos",
-        type="primary" if graficos_ativo else "secondary",
-    ):
-        # Abre submenu ou navega para a primeira sub-view
+    graficos_ativo = st.session_state.pagina_atual in ("prazos_urgentes", "status_vertente", "inadimplencia", "carteira_advogados")
+    if st.button("📊  Gráficos", use_container_width=True, key="btn_graficos", type="primary" if graficos_ativo else "secondary"):
         if not graficos_ativo:
             st.session_state.pagina_atual = "prazos_urgentes"
             st.rerun()
 
-    # Sub-botões de Gráficos — visíveis apenas quando a seção está ativa
     if graficos_ativo:
         with st.container():
             prazos_ativo = st.session_state.pagina_atual == "prazos_urgentes"
-            if st.button(
-                "⏰  Prazos Urgentes",
-                use_container_width=True,
-                key="btn_prazos",
-                type="primary" if prazos_ativo else "secondary",
-            ):
+            if st.button("⏰  Prazos Urgentes", use_container_width=True, key="btn_prazos", type="primary" if prazos_ativo else "secondary"):
                 st.session_state.pagina_atual = "prazos_urgentes"
                 st.rerun()
 
             status_ativo = st.session_state.pagina_atual == "status_vertente"
-            if st.button(
-                "📋  Status Vertente",
-                use_container_width=True,
-                key="btn_status",
-                type="primary" if status_ativo else "secondary",
-            ):
+            if st.button("📋  Status Vertente", use_container_width=True, key="btn_status", type="primary" if status_ativo else "secondary"):
                 st.session_state.pagina_atual = "status_vertente"
                 st.rerun()
 
             inadimplencia_ativo = st.session_state.pagina_atual == "inadimplencia"
-            if st.button(
-                "📉  Inadimplência",
-                use_container_width=True,
-                key="btn_inadimplencia",
-                type="primary" if inadimplencia_ativo else "secondary",
-            ):
+            if st.button("📉  Inadimplência", use_container_width=True, key="btn_inadimplencia", type="primary" if inadimplencia_ativo else "secondary"):
                 st.session_state.pagina_atual = "inadimplencia"
                 st.rerun()
 
             carteira_ativo = st.session_state.pagina_atual == "carteira_advogados"
-            if st.button(
-                "💼  Carteira Advogados",
-                use_container_width=True,
-                key="btn_carteira",
-                type="primary" if carteira_ativo else "secondary",
-            ):
+            if st.button("💼  Carteira Advogados", use_container_width=True, key="btn_carteira", type="primary" if carteira_ativo else "secondary"):
                 st.session_state.pagina_atual = "carteira_advogados"
                 st.rerun()
 
     st.markdown("<div style='margin-bottom:0.6rem;'></div>", unsafe_allow_html=True)
 
-    # ── Botão Notificador de Prazos (Nova Hierarquia Principal) ──────────────
     notificador_ativo = st.session_state.pagina_atual == "notificador_prazos"
-    if st.button(
-        "🔔  Notificador de Prazos",
-        use_container_width=True,
-        key="btn_notificador",
-        type="primary" if notificador_ativo else "secondary",
-    ):
+    if st.button("🔔  Notificador de Prazos", use_container_width=True, key="btn_notificador", type="primary" if notificador_ativo else "secondary"):
         st.session_state.pagina_atual = "notificador_prazos"
         st.rerun()
 
-
-    # ── Logo CITi no rodapé ──────────────────────────────────────────────────
-    st.markdown(
-        "<div style='position:fixed; bottom:1.2rem; left:0.8rem;'>",
-        unsafe_allow_html=True,
-    )
+    st.markdown("<div style='position:fixed; bottom:1.2rem; left:0.8rem;'>", unsafe_allow_html=True)
     logo_path = Path(__file__).parent / "assets" / "logo_citi.png"
     if logo_path.exists():
         st.image(str(logo_path), width=48)
     st.markdown("</div>", unsafe_allow_html=True)
+
+
+# ── Área Principal da Página (Fora da Sidebar) ──────────────────────────────
+
+# ── 🚨 RETÂNGULO DE NOTIFICAÇÃO DEITADO (TOPO) ──────────────────────────────
+if deve_exibir_notificacao and st.session_state.qtd_criticos > 0:
+    with st.container(border=True): # Cria o retângulo em volta
+        # Dividimos o retângulo: 60% para o texto, 20% para cada botão
+        col_texto, col_btn_ver, col_btn_fechar = st.columns([3, 1, 1])
+        
+        with col_texto:
+            # 2 linhas de mensagem formatadas com HTML nativo para ficarem juntas
+            st.markdown(
+                f"<h4 style='margin-bottom:0; padding-bottom:5px; color:#c0392b;'>🚨 Aviso de Prazos Críticos</h4>"
+                f"<p style='margin-top:0; padding-top:0; color:#555;'>Você tem <b>{st.session_state.qtd_criticos} novos processos</b> entrando em vencimento. Recomendamos a verificação imediata.</p>",
+                unsafe_allow_html=True
+            )
+            
+        with col_btn_ver:
+            st.write("") # Espaço para o botão descer um pouco e alinhar com o texto
+            if st.button("Ver mais", use_container_width=True, key="btn_notif_ver_mais", type="primary"):
+                st.session_state.pagina_atual = "notificador_prazos"
+                st.session_state.ultima_data_interacao = hoje
+                st.rerun()
+                
+        with col_btn_fechar:
+            st.write("") # Espaço para o botão descer um pouco e alinhar com o texto
+            if st.button("Fechar", use_container_width=True, key="btn_notif_fechar"):
+                st.session_state.ultima_data_interacao = hoje
+                st.rerun()
 
 # ── Roteamento de páginas ───────────────────────────────────────────────────
 pagina = st.session_state.pagina_atual
@@ -149,23 +156,18 @@ pagina = st.session_state.pagina_atual
 if pagina == "chatbot":
     from views.chatbot import render
     render()
-
 elif pagina == "prazos_urgentes":
     from views.prazos_urgentes import render
     render()
-
 elif pagina == "status_vertente":
     from views.status_vertente import renderizar_tela
     renderizar_tela()
-
 elif pagina == "inadimplencia":
     from views.view_inadimplencia import renderizar_tela
     renderizar_tela()
-
 elif pagina == "carteira_advogados":
     from views.carteira_advogados import renderizar_tela
     renderizar_tela()
-
 elif pagina == "notificador_prazos":
     from views.notificador_prazos import renderizar_tela
     renderizar_tela()
