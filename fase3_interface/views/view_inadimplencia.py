@@ -51,24 +51,33 @@ def renderizar_tela():
 
     # 1. Transformamos a lista bruta em DataFrame
     df_bruto = pd.DataFrame(dados_brutos)
+    
+    # --- NOVO FILTRO: Confia estritamente na coluna de status da planilha ---
+    if 'status_pagamento' in df_bruto.columns:
+        df_bruto = df_bruto[df_bruto['status_pagamento'].str.lower() == 'atrasado']
+
     df_bruto['valor_em_aberto'] = pd.to_numeric(df_bruto['valor_em_aberto'], errors='coerce').fillna(0.0)
     df_bruto = df_bruto[df_bruto['valor_em_aberto'] > 0]
+    
+    # Se, após o filtro, não sobrar ninguém, exibe sucesso e encerra
+    if df_bruto.empty:
+        st.success("Todos os contratos estão em dia ou quitados!")
+        return
     
     # 2. Convertemos a data de vencimento e calculamos os dias de atraso
     df_bruto['data_vencimento'] = pd.to_datetime(df_bruto['data_vencimento'])
     hoje = pd.to_datetime(datetime.now().date())
     
-    
-    # Diferença em dias entre hoje e o vencimento
+    # Diferença em dias entre hoje e o vencimento (para agrupar no gráfico)
     df_bruto['dias_atraso'] = (hoje - df_bruto['data_vencimento']).dt.days
     
+    # CORREÇÃO DE SEGURANÇA: Se a sua base de dados tem datas no futuro marcadas como "Atrasado",
+    # a matemática dará um número negativo. Isso quebra a faixa do gráfico.
+    # Vamos forçar que qualquer atraso "no futuro" caia na primeira faixa (1 dia).
+    df_bruto.loc[df_bruto['dias_atraso'] <= 0, 'dias_atraso'] = 1 
 
-    # 3. Filtramos: Apenas o que de fato está atrasado (dias_atraso > 0)
-    df_atrasados = df_bruto[df_bruto['dias_atraso'] > 0].copy()
-
-    if df_atrasados.empty:
-        st.success("Todos os contratos pendentes estão dentro do prazo de vencimento!")
-        return
+    # 3. Criamos a cópia final (não precisamos mais filtrar por dias_atraso > 0)
+    df_atrasados = df_bruto.copy()
 
     # 4. Criamos as faixas de atraso dinamicamente usando condições no Pandas
     def definir_faixa(dias):
@@ -79,7 +88,7 @@ def renderizar_tela():
 
     df_atrasados['faixa'] = df_atrasados['dias_atraso'].apply(definir_faixa)
 
-    # 5. Agrupamos e somamos o 'valor_em_aberto' por faixa para o gráficoPlotly
+    # 5. Agrupamos e somamos o 'valor_em_aberto' por faixa para o gráfico Plotly
     df_agrupado = df_atrasados.groupby('faixa')['valor_em_aberto'].sum().reset_index(name='valor_total')
 
     # Configurações visuais do Gráfico de Aging
@@ -115,14 +124,16 @@ def renderizar_tela():
     # Formata a data para exibição na tabela
     df_atrasados['data_vencimento'] = df_atrasados['data_vencimento'].dt.strftime('%d/%m/%Y')
     
+    # Adicionei a coluna 'status_pagamento' na tabela para você conferir visualmente que só tem 'Atrasado'
     st.dataframe(
-        df_atrasados[['nome_cliente', 'numero_processo', 'valor_em_aberto', 'data_vencimento', 'dias_atraso']],
+        df_atrasados[['nome_cliente', 'numero_processo', 'valor_em_aberto', 'data_vencimento', 'dias_atraso', 'status_pagamento']],
         column_config={
             "nome_cliente": "Cliente",
             "numero_processo": "Processo",
             "valor_em_aberto": st.column_config.NumberColumn("Valor Aberto", format="R$ %.2f"),
             "data_vencimento": "Vencimento",
-            "dias_atraso": "Dias em Atraso"
+            "dias_atraso": "Dias em Atraso",
+            "status_pagamento": "Status"
         },
         hide_index=True, use_container_width=True
     )

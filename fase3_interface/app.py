@@ -84,5 +84,5 @@ if pagina == "chatbot":
     render()
 
 elif pagina == "graficos":
-    from views.prazos_urgentes import render
+    from views.prazos_urgentes import render 
     render()
