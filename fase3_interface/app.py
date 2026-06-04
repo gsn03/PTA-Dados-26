@@ -167,10 +167,5 @@ elif pagina == "carteira_advogados":
     renderizar_tela()
 
 elif pagina == "notificador_prazos":
-    # Roteamento seguro caso o arquivo views/notificador_prazos.py ainda não exista
-    try:
-        from views.notificador_prazos import renderizar_tela
-        renderizar_tela()
-    except ImportError:
-        st.subheader("🔔 Notificador de Prazos")
-        st.info("A tela do Notificador de Prazos está pronta para ser integrada em `views/notificador_prazos.py`.")
+    from views.notificador_prazos import renderizar_tela
+    renderizar_tela()
