@@ -1,6 +1,6 @@
 """
 app.py — Cavalcanti & Melo | Interface Principal
-Passo 1: Layout, sidebar, navegação entre views
+Integra todas as views: chatbot, prazos_urgentes, status_vertente, view_inadimplencia
 """
 
 import streamlit as st
@@ -28,41 +28,96 @@ if "pagina_atual" not in st.session_state:
     st.session_state.pagina_atual = "chatbot"
 
 if "mostrar_historico" not in st.session_state:
-    st.session_state.mostrar_historico = True
+    st.session_state.mostrar_historico = False
 
 # ── Sidebar ─────────────────────────────────────────────────────────────────
 with st.sidebar:
-    # Logo CITi no topo
-    logo_path = Path(__file__).parent / "assets" / "logo_citi.png"
-    if logo_path.exists():
-        st.image(str(logo_path), width=80)
-
-    st.markdown("---")
-
-    # Título "Serviços" com ícone de engrenagem
+    # Ícone de engrenagem + título "Serviços"
     engrenagem_path = Path(__file__).parent / "assets" / "engrenagem.png"
     col_icon, col_title = st.columns([1, 3])
     with col_icon:
         if engrenagem_path.exists():
-            st.image(str(engrenagem_path), width=32)
+            st.image(str(engrenagem_path), width=28)
+        else:
+            st.markdown("⚙️")
     with col_title:
-        st.markdown("### Serviços")
+        st.markdown(
+            "<h3 style='margin:0; padding:0; line-height:2;'>Serviços</h3>",
+            unsafe_allow_html=True,
+        )
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-bottom:1.2rem;'></div>", unsafe_allow_html=True)
 
-    # Botão ChatBot
-    if st.button("💬  ChatBot", use_container_width=True, key="btn_chatbot"):
+    # ── Botão ChatBot ────────────────────────────────────────────────────────
+    chatbot_ativo = st.session_state.pagina_atual == "chatbot"
+    if st.button(
+        "💬  ChatBot",
+        use_container_width=True,
+        key="btn_chatbot",
+        type="primary" if chatbot_ativo else "secondary",
+    ):
         st.session_state.pagina_atual = "chatbot"
+        st.rerun()
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-bottom:0.6rem;'></div>", unsafe_allow_html=True)
 
-    # Botão Gráficos
-    if st.button("📊  Gráficos", use_container_width=True, key="btn_graficos"):
-        st.session_state.pagina_atual = "graficos"
+    # ── Botão Gráficos (submenu) ─────────────────────────────────────────────
+    graficos_ativo = st.session_state.pagina_atual in (
+        "prazos_urgentes", "status_vertente", "inadimplencia"
+    )
+    if st.button(
+        "📊  Gráficos",
+        use_container_width=True,
+        key="btn_graficos",
+        type="primary" if graficos_ativo else "secondary",
+    ):
+        # Abre submenu ou navega para a primeira sub-view
+        if not graficos_ativo:
+            st.session_state.pagina_atual = "prazos_urgentes"
+            st.rerun()
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    # Sub-botões de Gráficos — visíveis apenas quando a seção está ativa
+    if graficos_ativo:
+        st.markdown(
+            "<div style='margin-left:1rem; margin-top:0.3rem;'>",
+            unsafe_allow_html=True,
+        )
 
-    # Botão Notificações Prazos (desabilitado por enquanto — em desenvolvimento)
+        prazos_ativo = st.session_state.pagina_atual == "prazos_urgentes"
+        if st.button(
+            "⏰  Prazos Urgentes",
+            use_container_width=True,
+            key="btn_prazos",
+            type="primary" if prazos_ativo else "secondary",
+        ):
+            st.session_state.pagina_atual = "prazos_urgentes"
+            st.rerun()
+
+        status_ativo = st.session_state.pagina_atual == "status_vertente"
+        if st.button(
+            "📋  Status Vertente",
+            use_container_width=True,
+            key="btn_status",
+            type="primary" if status_ativo else "secondary",
+        ):
+            st.session_state.pagina_atual = "status_vertente"
+            st.rerun()
+
+        inadimplencia_ativo = st.session_state.pagina_atual == "inadimplencia"
+        if st.button(
+            "📉  Inadimplência",
+            use_container_width=True,
+            key="btn_inadimplencia",
+            type="primary" if inadimplencia_ativo else "secondary",
+        ):
+            st.session_state.pagina_atual = "inadimplencia"
+            st.rerun()
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("<div style='margin-bottom:0.6rem;'></div>", unsafe_allow_html=True)
+
+    # ── Botão Notificações (desabilitado) ────────────────────────────────────
     st.button(
         "🔔  Notificações prazos",
         use_container_width=True,
@@ -71,10 +126,15 @@ with st.sidebar:
     )
     st.caption("*(em desenvolvimento)*")
 
-    # Logo CITi no rodapé da sidebar
-    st.markdown("<br><br><br>", unsafe_allow_html=True)
+    # ── Logo CITi no rodapé — afastada, próxima da margem inferior ───────────
+    st.markdown(
+        "<div style='position:fixed; bottom:1.2rem; left:0.8rem;'>",
+        unsafe_allow_html=True,
+    )
+    logo_path = Path(__file__).parent / "assets" / "logo_citi.png"
     if logo_path.exists():
-        st.image(str(logo_path), width=60)
+        st.image(str(logo_path), width=48)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # ── Roteamento de páginas ───────────────────────────────────────────────────
 pagina = st.session_state.pagina_atual
@@ -83,6 +143,14 @@ if pagina == "chatbot":
     from views.chatbot import render
     render()
 
-elif pagina == "graficos":
-    from views.prazos_urgentes import render 
+elif pagina == "prazos_urgentes":
+    from views.prazos_urgentes import render
     render()
+
+elif pagina == "status_vertente":
+    from views.status_vertente import renderizar_tela
+    renderizar_tela()
+
+elif pagina == "inadimplencia":
+    from views.view_inadimplencia import renderizar_tela
+    renderizar_tela()

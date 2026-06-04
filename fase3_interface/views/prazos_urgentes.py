@@ -1,6 +1,7 @@
 """
 views/prazos_urgentes.py — Sobrecarga de Prazos por Responsável
-Página única (sem abas) com todos os gráficos.
+Página única (sem abas) com gráfico de barras horizontais e timeline.
+Pizza (gráfico_fases) removida conforme solicitação.
 Cores: cinza #44464a | amarelo #ffcc00
 """
 
@@ -8,7 +9,6 @@ import os
 import requests
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
 from pathlib import Path
 from dotenv import load_dotenv
@@ -30,7 +30,11 @@ COR_GRADE      = "#ebebeb"
 def buscar_dados_prazos(dias: int):
     """Faz a requisição HTTP para a API real e trata os erros."""
     try:
-        resposta = requests.get(f"{API_URL}/ia/prazos_urgentes", params={"dias": dias}, timeout=10)
+        resposta = requests.get(
+            f"{API_URL}/ia/prazos_urgentes",
+            params={"dias": dias},
+            timeout=10,
+        )
         if resposta.status_code == 200:
             return resposta.json().get("processos_urgentes", [])
         else:
@@ -42,6 +46,7 @@ def buscar_dados_prazos(dias: int):
     except Exception as e:
         st.error(f"Erro inesperado: {e}")
         return None
+
 
 # ── Gráfico de barras horizontais: volume por advogado ───────────────────────
 def _grafico_volume_advogado(df: pd.DataFrame):
@@ -85,46 +90,7 @@ def _grafico_volume_advogado(df: pd.DataFrame):
             automargin=True,
         ),
         margin=dict(l=10, r=40, t=50, b=20),
-        height=300,
-    )
-
-    return fig
-
-
-# ── Gráfico de pizza/donut: distribuição por fase ────────────────────────────
-def _grafico_fases(df: pd.DataFrame):
-    por_fase = df.groupby("Fase Atual").size().reset_index(name="Quantidade")
-
-    fig = px.pie(
-        por_fase,
-        names="Fase Atual",
-        values="Quantidade",
-        hole=0.45,
-        color_discrete_sequence=[
-            COR_PRIMARIA, COR_AMARELO, "#6b6d72",
-            "#ffd740", "#2e2f31", "#b8a000",
-        ],
-    )
-
-    fig.update_traces(
-        textfont_size=12,
-        marker=dict(line=dict(color=COR_FUNDO_PLOT, width=2)),
-    )
-
-    fig.update_layout(
-        title=dict(
-            text="<b>Distribuição por Fase Processual</b>",
-            font=dict(color=COR_AMARELO, size=15),
-            x=0,
-        ),
-        plot_bgcolor=COR_FUNDO_PLOT,
-        paper_bgcolor=COR_FUNDO_PLOT,
-        legend=dict(
-            font=dict(color=COR_PRIMARIA, size=11),
-            orientation="v",
-        ),
-        margin=dict(l=10, r=10, t=50, b=20),
-        height=300,
+        height=320,
     )
 
     return fig
@@ -147,7 +113,11 @@ def _grafico_timeline(df: pd.DataFrame):
             y=por_dia["Quantidade"],
             mode="lines+markers",
             line=dict(color=COR_PRIMARIA, width=2.5),
-            marker=dict(color=COR_AMARELO, size=8, line=dict(color=COR_PRIMARIA, width=1.5)),
+            marker=dict(
+                color=COR_AMARELO,
+                size=8,
+                line=dict(color=COR_PRIMARIA, width=1.5),
+            ),
             fill="tozeroy",
             fillcolor="rgba(68,70,74,0.08)",
         )
@@ -205,15 +175,14 @@ def _tabela_detalhada(df: pd.DataFrame):
 
 # ── View principal ────────────────────────────────────────────────────────────
 def render():
-    # Correção do path para aceder à pasta assets corretamente
+    # Ícone de balança do título
     balanca_path = Path(__file__).resolve().parent.parent / "assets" / "balanca.png"
 
-    # Título da página
     col_t1, col_t2, col_t3 = st.columns([3, 1, 3])
     with col_t2:
         if balanca_path.exists():
             st.image(str(balanca_path), width=40)
-            
+
     st.markdown(
         f"<h2 style='text-align:center; color:{COR_PRIMARIA}; margin-top:-2rem;'>"
         "Sobrecarga de Prazos por Responsável</h2>",
@@ -240,33 +209,27 @@ def render():
     # ── Carregar dados reais da API ──────────────────────────────────────────
     with st.spinner("A consultar os prazos processuais no banco de dados..."):
         dados_prazos = buscar_dados_prazos(dias=janela)
-        
-    # Tratamento de ecrã vazio
+
     if dados_prazos is None:
         return
-        
+
     if len(dados_prazos) == 0:
         st.success(f"Excelente notícia! Não há prazos urgentes para os próximos {janela} dias.")
         return
 
-    # Transformar em DataFrame e preparar colunas para o design
+    # Transformar em DataFrame e preparar colunas
     df = pd.DataFrame(dados_prazos)
-    
-    # Renomear as colunas da API para os nomes que os gráficos esperam
-    df.rename(columns={
-        'advogado': 'Responsável',
-        'prazo': 'Vencimento',
-        'numero_processo': 'Processo',
-        'nome_cliente': 'Cliente',
-        'fase_atual': 'Fase Atual'
-    }, inplace=True)
-    
-    # Preencher advogados vazios
-    df['Responsável'] = df['Responsável'].fillna("Não Atribuído")
-    
-    # Formatar a data para o formato brasileiro para bater com o código do timeline
-    df['Vencimento'] = pd.to_datetime(df['Vencimento']).dt.strftime('%d/%m/%Y')
 
+    df.rename(columns={
+        "advogado":        "Responsável",
+        "prazo":           "Vencimento",
+        "numero_processo": "Processo",
+        "nome_cliente":    "Cliente",
+        "fase_atual":      "Fase Atual",
+    }, inplace=True)
+
+    df["Responsável"] = df["Responsável"].fillna("Não Atribuído")
+    df["Vencimento"]  = pd.to_datetime(df["Vencimento"]).dt.strftime("%d/%m/%Y")
 
     # ── Resumo ───────────────────────────────────────────────────────────────
     total = len(df)
@@ -277,27 +240,19 @@ def render():
         unsafe_allow_html=True,
     )
 
-    # ── Linha 1: Barras horizontais + Pizza ──────────────────────────────────
-    col_bar, col_pie = st.columns([3, 2])
-    with col_bar:
-        st.plotly_chart(
-            _grafico_volume_advogado(df),
-            use_container_width=True,
-            config={"displaylogo": False},
-        )
-    with col_pie:
-        st.plotly_chart(
-            _grafico_fases(df),
-            use_container_width=True,
-            config={"displaylogo": False},
-        )
+    # ── Gráfico de barras horizontais (ocupa largura total) ──────────────────
+    st.plotly_chart(
+        _grafico_volume_advogado(df),
+        use_container_width=True,
+        config={"displaylogo": False},
+    )
 
-    # ── Linha 2: Timeline ────────────────────────────────────────────────────
+    # ── Timeline ─────────────────────────────────────────────────────────────
     st.plotly_chart(
         _grafico_timeline(df),
         use_container_width=True,
         config={"displaylogo": False},
     )
 
-    # ── Linha 3: Tabela detalhada ─────────────────────────────────────────────
+    # ── Tabela detalhada ──────────────────────────────────────────────────────
     _tabela_detalhada(df)
