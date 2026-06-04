@@ -74,6 +74,11 @@ def renderizar_tela():
 
     df = pd.DataFrame(dados)
 
+    df["vertente"] = df["vertente"].astype(str).str.upper()
+    df = df[~df["vertente"].isin(["NÃO INFORMADO", "NAO INFORMADO"])]
+    df["vertente"] = df["vertente"].replace({"CÍVEL": "CIVIL"})
+    df = df.groupby(["vertente", "status"], as_index=False)["quantidade"].sum()
+
     # ── Filtros ───────────────────────────────────────────────────────────────
     st.markdown(
         f"<p style='color:{COR_PRIMARIA}; font-weight:600; font-size:0.95rem;'>"
