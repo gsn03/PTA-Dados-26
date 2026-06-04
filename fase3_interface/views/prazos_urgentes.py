@@ -2,7 +2,7 @@
 views/prazos_urgentes.py — Sobrecarga de Prazos por Responsável
 Página única (sem abas) com gráfico de barras horizontais e timeline.
 Pizza (gráfico_fases) removida conforme solicitação.
-Cores: cinza #44464a | amarelo #ffcc00
+Cores: cinza #44464a | azul petróleo #084d6e
 """
 
 import os
@@ -21,7 +21,7 @@ API_URL = os.getenv("API_KEY", "http://127.0.0.1:8000")
 
 # ── Paleta ───────────────────────────────────────────────────────────────────
 COR_PRIMARIA   = "#44464a"   # cinza escuro
-COR_AMARELO    = "#ffcc00"   # amarelo
+COR_AMARELO    = "#084d6e"   # amarelo
 COR_FUNDO      = "#f5f5f5"
 COR_FUNDO_PLOT = "#ffffff"
 COR_GRADE      = "#ebebeb"

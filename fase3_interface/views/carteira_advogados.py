@@ -2,7 +2,7 @@
 views/carteira_advogados.py — Carteira por Advogado
 Página única que exibe a carga de trabalho de um advogado selecionado,
 apresentando totais e a tabela dos 5 processos mais urgentes.
-Cores: cinza #44464a | amarelo #ffcc00
+Cores: cinza #44464a | azul petróleo #084d6e
 """
 
 import os
@@ -20,7 +20,7 @@ API_URL = os.getenv("API_KEY", "http://127.0.0.1:8000")
 
 # ── Paleta ───────────────────────────────────────────────────────────────────
 COR_PRIMARIA   = "#44464a"   # cinza escuro
-COR_AMARELO    = "#ffcc00"   # amarelo
+COR_AMARELO    = "#084d6e"   # amarelo
 COR_FUNDO      = "#f5f5f5"
 COR_GRADE      = "#ebebeb"
 

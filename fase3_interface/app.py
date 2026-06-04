@@ -1,6 +1,6 @@
 """
 app.py — Cavalcanti & Melo | Interface Principal
-Integra todas as views: chatbot, prazos_urgentes, status_vertente, view_inadimplencia
+Integra todas as views: chatbot, prazos_urgentes, status_vertente, view_inadimplencia, notificador_prazos
 """
 
 import streamlit as st
@@ -32,17 +32,17 @@ if "mostrar_historico" not in st.session_state:
 
 # ── Sidebar ─────────────────────────────────────────────────────────────────
 with st.sidebar:
-    # Ícone de engrenagem + título "Serviços"
-    engrenagem_path = Path(__file__).parent / "assets" / "engrenagem.png"
+    # Logo + nome da empresa "Cavalcanti & Melo"
+    balanca_path = Path(__file__).parent / "assets" / "balanca.png"
     col_icon, col_title = st.columns([1, 3])
     with col_icon:
-        if engrenagem_path.exists():
-            st.image(str(engrenagem_path), width=28)
+        if balanca_path.exists():
+            st.image(str(balanca_path), width=28)
         else:
-            st.markdown("⚙️")
+            st.markdown("⚖️")
     with col_title:
         st.markdown(
-            "<h3 style='margin:0; padding:0; line-height:2;'>Serviços</h3>",
+            "<h3 style='margin:0; padding:0; line-height:1.3; font-size:0.95rem;'>Cavalcanti<br>&amp; Melo</h3>",
             unsafe_allow_html=True,
         )
 
@@ -78,65 +78,62 @@ with st.sidebar:
 
     # Sub-botões de Gráficos — visíveis apenas quando a seção está ativa
     if graficos_ativo:
-        st.markdown(
-            "<div style='margin-left:1rem; margin-top:0.3rem;'>",
-            unsafe_allow_html=True,
-        )
+        with st.container():
+            prazos_ativo = st.session_state.pagina_atual == "prazos_urgentes"
+            if st.button(
+                "⏰  Prazos Urgentes",
+                use_container_width=True,
+                key="btn_prazos",
+                type="primary" if prazos_ativo else "secondary",
+            ):
+                st.session_state.pagina_atual = "prazos_urgentes"
+                st.rerun()
 
-        prazos_ativo = st.session_state.pagina_atual == "prazos_urgentes"
-        if st.button(
-            "⏰  Prazos Urgentes",
-            use_container_width=True,
-            key="btn_prazos",
-            type="primary" if prazos_ativo else "secondary",
-        ):
-            st.session_state.pagina_atual = "prazos_urgentes"
-            st.rerun()
+            status_ativo = st.session_state.pagina_atual == "status_vertente"
+            if st.button(
+                "📋  Status Vertente",
+                use_container_width=True,
+                key="btn_status",
+                type="primary" if status_ativo else "secondary",
+            ):
+                st.session_state.pagina_atual = "status_vertente"
+                st.rerun()
 
-        status_ativo = st.session_state.pagina_atual == "status_vertente"
-        if st.button(
-            "📋  Status Vertente",
-            use_container_width=True,
-            key="btn_status",
-            type="primary" if status_ativo else "secondary",
-        ):
-            st.session_state.pagina_atual = "status_vertente"
-            st.rerun()
+            inadimplencia_ativo = st.session_state.pagina_atual == "inadimplencia"
+            if st.button(
+                "📉  Inadimplência",
+                use_container_width=True,
+                key="btn_inadimplencia",
+                type="primary" if inadimplencia_ativo else "secondary",
+            ):
+                st.session_state.pagina_atual = "inadimplencia"
+                st.rerun()
 
-        inadimplencia_ativo = st.session_state.pagina_atual == "inadimplencia"
-        if st.button(
-            "📉  Inadimplência",
-            use_container_width=True,
-            key="btn_inadimplencia",
-            type="primary" if inadimplencia_ativo else "secondary",
-        ):
-            st.session_state.pagina_atual = "inadimplencia"
-            st.rerun()
-        
-        carteira_ativo = st.session_state.pagina_atual == "carteira_advogados"
-        if st.button(
-            "💼  Carteira Advogados",
-            use_container_width=True,
-            key="btn_carteira",
-            type="primary" if carteira_ativo else "secondary",
-        ):
-            st.session_state.pagina_atual = "carteira_advogados"
-            st.rerun()
-
-        st.markdown("</div>", unsafe_allow_html=True)
+            carteira_ativo = st.session_state.pagina_atual == "carteira_advogados"
+            if st.button(
+                "💼  Carteira Advogados",
+                use_container_width=True,
+                key="btn_carteira",
+                type="primary" if carteira_ativo else "secondary",
+            ):
+                st.session_state.pagina_atual = "carteira_advogados"
+                st.rerun()
 
     st.markdown("<div style='margin-bottom:0.6rem;'></div>", unsafe_allow_html=True)
 
-    # ── Botão Notificações (desabilitado) ────────────────────────────────────
-    st.button(
-        "🔔  Notificações prazos",
+    # ── Botão Notificador de Prazos (Nova Hierarquia Principal) ──────────────
+    notificador_ativo = st.session_state.pagina_atual == "notificador_prazos"
+    if st.button(
+        "🔔  Notificador de Prazos",
         use_container_width=True,
-        key="btn_notif",
-        disabled=True,
-    )
-    st.caption("*(em desenvolvimento)*")
+        key="btn_notificador",
+        type="primary" if notificador_ativo else "secondary",
+    ):
+        st.session_state.pagina_atual = "notificador_prazos"
+        st.rerun()
 
-    # ── Logo CITi no rodapé — afastada, próxima da margem inferior ───────────
+
+    # ── Logo CITi no rodapé ──────────────────────────────────────────────────
     st.markdown(
         "<div style='position:fixed; bottom:1.2rem; left:0.8rem;'>",
         unsafe_allow_html=True,
@@ -168,3 +165,12 @@ elif pagina == "inadimplencia":
 elif pagina == "carteira_advogados":
     from views.carteira_advogados import renderizar_tela
     renderizar_tela()
+
+elif pagina == "notificador_prazos":
+    # Roteamento seguro caso o arquivo views/notificador_prazos.py ainda não exista
+    try:
+        from views.notificador_prazos import renderizar_tela
+        renderizar_tela()
+    except ImportError:
+        st.subheader("🔔 Notificador de Prazos")
+        st.info("A tela do Notificador de Prazos está pronta para ser integrada em `views/notificador_prazos.py`.")

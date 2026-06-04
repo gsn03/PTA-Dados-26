@@ -1,6 +1,6 @@
 """
 views/view_inadimplencia.py — Risco de Carteira e Inadimplência
-Paleta da interface: cinza #44464a | amarelo #ffcc00
+Paleta da interface: cinza #44464a | azul petróleo #084d6e
 """
 
 import os
@@ -19,7 +19,7 @@ API_URL = os.getenv("API_KEY", "http://127.0.0.1:8000")
 
 # ── Paleta ────────────────────────────────────────────────────────────────────
 COR_PRIMARIA   = "#44464a"
-COR_AMARELO    = "#ffcc00"
+COR_AMARELO    = "#084d6e"
 COR_FUNDO_PLOT = "#ffffff"
 COR_GRADE      = "#ebebeb"
 
@@ -28,7 +28,7 @@ MAPA_CORES = {
     "1 a 30 dias":  "#9a9b9f",   # cinza claro — menor risco
     "31 a 60 dias": "#6b6d72",   # cinza médio
     "61 a 90 dias": "#44464a",   # cinza escuro
-    "> 90 dias":    "#ffcc00",   # amarelo — alerta máximo
+    "> 90 dias":    "#084d6e",   # azul petróleo — alerta máximo
 }
 
 

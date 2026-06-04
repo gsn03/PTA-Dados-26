@@ -1,6 +1,6 @@
 """
 views/status_vertente.py — Status dos Processos por Vertente
-Paleta da interface: cinza #44464a | amarelo #ffcc00
+Paleta da interface: cinza #44464a | azul petróleo #084d6e
 """
 
 import os
@@ -18,7 +18,7 @@ API_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
 
 # ── Paleta ────────────────────────────────────────────────────────────────────
 COR_PRIMARIA   = "#44464a"
-COR_AMARELO    = "#ffcc00"
+COR_AMARELO    = "#084d6e"
 COR_FUNDO_PLOT = "#ffffff"
 COR_GRADE      = "#ebebeb"
 
@@ -28,7 +28,7 @@ PALETA_CINZAS = [
     "#6b6d72",   # cinza médio
     "#9a9b9f",   # cinza claro
     "#c4c5c8",   # cinza muito claro
-    "#ffcc00",   # amarelo (destaque extra)
+    "#084d6e",   # azul petróleo (destaque extra)
 ]
 
 
