@@ -1,7 +1,12 @@
+"""
+views/view_inadimplencia.py — Risco de Carteira e Inadimplência
+Paleta da interface: cinza #44464a | amarelo #ffcc00
+"""
+
 import os
 import requests
 import pandas as pd
-import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 from pathlib import Path
 from dotenv import load_dotenv
@@ -12,128 +17,180 @@ load_dotenv(pasta_raiz / ".env", override=True)
 
 API_URL = os.getenv("API_KEY", "http://127.0.0.1:8000")
 
+# ── Paleta ────────────────────────────────────────────────────────────────────
+COR_PRIMARIA   = "#44464a"
+COR_AMARELO    = "#ffcc00"
+COR_FUNDO_PLOT = "#ffffff"
+COR_GRADE      = "#ebebeb"
+
+# Faixas de atraso em tons de cinza escalonados (mais escuro = mais grave)
+MAPA_CORES = {
+    "1 a 30 dias":  "#9a9b9f",   # cinza claro — menor risco
+    "31 a 60 dias": "#6b6d72",   # cinza médio
+    "61 a 90 dias": "#44464a",   # cinza escuro
+    "> 90 dias":    "#ffcc00",   # amarelo — alerta máximo
+}
+
+
 def buscar_dados_inadimplencia():
-    """Busca a lista bruta de contratos inadimplentes da API com print de diagnóstico."""
-    # Garanta que a API_URL termine sem barra para não duplicar (ex: http://127.0.0.1:8000)
-    url_limpa = API_URL.rstrip("/")
-    
-    # Vamos testar o caminho direto
+    url_limpa  = API_URL.rstrip("/")
     link_final = f"{url_limpa}/ia/inadimplencia"
-    
-    # ESSE PRINT VAI APARECER NO TERMINAL DO SEU VS CODE:
+
     print(f"\n[DIAGNÓSTICO] O Streamlit está chamando: {link_final}\n")
-    
+
     try:
-        resposta = requests.get(link_final, timeout=10) 
+        resposta = requests.get(link_final, timeout=10)
         if resposta.status_code == 200:
             return resposta.json().get("detalhamento", [])
         else:
-            # Mostra na tela do Streamlit qual link exato deu erro
             st.error(f"Erro na API: Código {resposta.status_code} ao acessar {link_final}")
             return None
     except requests.exceptions.ConnectionError:
         st.error(f"Falha de conexão ao tentar acessar: {link_final}")
         return None
 
+
 def renderizar_tela():
-    st.header("📉 Risco de Carteira e Inadimplência")
-    st.markdown("Visualize o valor total de honorários em atraso, segmentado pela idade da dívida.")
+    st.markdown(
+        f"<h2 style='text-align:center; color:{COR_PRIMARIA};'>"
+        "Risco de Carteira e Inadimplência 📉</h2>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        "<p style='text-align:center; color:#777;'>"
+        "Valor total de honorários em atraso, segmentado pela idade da dívida.</p>",
+        unsafe_allow_html=True,
+    )
+    st.markdown("---")
 
     with st.spinner("Processando dados financeiros..."):
         dados_brutos = buscar_dados_inadimplencia()
 
     if dados_brutos is None:
-        return 
-        
+        return
+
     if len(dados_brutos) == 0:
         st.success("Excelente notícia! Não há honorários em atraso neste momento.")
         return
 
-    # 1. Transformamos a lista bruta em DataFrame
     df_bruto = pd.DataFrame(dados_brutos)
-    
-    # --- NOVO FILTRO: Confia estritamente na coluna de status da planilha ---
-    if 'status_pagamento' in df_bruto.columns:
-        df_bruto = df_bruto[df_bruto['status_pagamento'].str.lower() == 'atrasado']
 
-    df_bruto['valor_em_aberto'] = pd.to_numeric(df_bruto['valor_em_aberto'], errors='coerce').fillna(0.0)
-    df_bruto = df_bruto[df_bruto['valor_em_aberto'] > 0]
-    
-    # Se, após o filtro, não sobrar ninguém, exibe sucesso e encerra
+    # Filtrar apenas status "atrasado"
+    if "status_pagamento" in df_bruto.columns:
+        df_bruto = df_bruto[df_bruto["status_pagamento"].str.lower() == "atrasado"]
+
+    df_bruto["valor_em_aberto"] = (
+        pd.to_numeric(df_bruto["valor_em_aberto"], errors="coerce").fillna(0.0)
+    )
+    df_bruto = df_bruto[df_bruto["valor_em_aberto"] > 0]
+
     if df_bruto.empty:
         st.success("Todos os contratos estão em dia ou quitados!")
         return
-    
-    # 2. Convertemos a data de vencimento e calculamos os dias de atraso
-    df_bruto['data_vencimento'] = pd.to_datetime(df_bruto['data_vencimento'])
-    hoje = pd.to_datetime(datetime.now().date())
-    
-    # Diferença em dias entre hoje e o vencimento (para agrupar no gráfico)
-    df_bruto['dias_atraso'] = (hoje - df_bruto['data_vencimento']).dt.days
-    
-    # CORREÇÃO DE SEGURANÇA: Se a sua base de dados tem datas no futuro marcadas como "Atrasado",
-    # a matemática dará um número negativo. Isso quebra a faixa do gráfico.
-    # Vamos forçar que qualquer atraso "no futuro" caia na primeira faixa (1 dia).
-    df_bruto.loc[df_bruto['dias_atraso'] <= 0, 'dias_atraso'] = 1 
 
-    # 3. Criamos a cópia final (não precisamos mais filtrar por dias_atraso > 0)
+    # Calcular dias de atraso
+    df_bruto["data_vencimento"] = pd.to_datetime(df_bruto["data_vencimento"])
+    hoje = pd.to_datetime(datetime.now().date())
+    df_bruto["dias_atraso"] = (hoje - df_bruto["data_vencimento"]).dt.days
+    df_bruto.loc[df_bruto["dias_atraso"] <= 0, "dias_atraso"] = 1
+
     df_atrasados = df_bruto.copy()
 
-    # 4. Criamos as faixas de atraso dinamicamente usando condições no Pandas
     def definir_faixa(dias):
-        if dias <= 30: return "1 a 30 dias"
+        if dias <= 30:  return "1 a 30 dias"
         elif dias <= 60: return "31 a 60 dias"
         elif dias <= 90: return "61 a 90 dias"
-        else: return "> 90 dias"
+        else:            return "> 90 dias"
 
-    df_atrasados['faixa'] = df_atrasados['dias_atraso'].apply(definir_faixa)
+    df_atrasados["faixa"] = df_atrasados["dias_atraso"].apply(definir_faixa)
 
-    # 5. Agrupamos e somamos o 'valor_em_aberto' por faixa para o gráfico Plotly
-    df_agrupado = df_atrasados.groupby('faixa')['valor_em_aberto'].sum().reset_index(name='valor_total')
+    df_agrupado = (
+        df_atrasados.groupby("faixa")["valor_em_aberto"]
+        .sum()
+        .reset_index(name="valor_total")
+    )
 
-    # Configurações visuais do Gráfico de Aging
     ordem_faixas = ["1 a 30 dias", "31 a 60 dias", "61 a 90 dias", "> 90 dias"]
-    mapa_cores = {
-        "1 a 30 dias": "#8C92AC", "31 a 60 dias": "#c5a059", 
-        "61 a 90 dias": "#D2691E", "> 90 dias": "#A52A2A"
-    }
 
-    total_devido = df_agrupado['valor_total'].sum()
-    st.subheader(f"Total Travado em Atraso: R$ {total_devido:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
-    
-    # Desenha o Gráfico
-    fig = px.bar(
-        df_agrupado, x='faixa', y='valor_total',
-        title="Volume de Dívida por Idade do Atraso",
-        category_orders={"faixa": ordem_faixas},
-        color='faixa', color_discrete_map=mapa_cores, text='valor_total'
+    total_devido = df_agrupado["valor_total"].sum()
+    total_fmt = f"R$ {total_devido:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    st.markdown(
+        f"<p style='font-weight:700; font-size:1.1rem; color:{COR_PRIMARIA};'>"
+        f"Total em Atraso: <span style='color:{COR_AMARELO};'>{total_fmt}</span></p>",
+        unsafe_allow_html=True,
     )
-    fig.update_traces(texttemplate='R$ %{text:,.2f}', textposition='outside', showlegend=False)
+
+    # ── Gráfico de barras (aging) na paleta cinza/amarelo ─────────────────────
+    # Garantir a ordem das faixas mesmo que nem todas existam
+    df_plot = (
+        pd.DataFrame({"faixa": ordem_faixas})
+        .merge(df_agrupado, on="faixa", how="left")
+        .fillna(0)
+    )
+
+    cores_barras = [MAPA_CORES.get(f, COR_PRIMARIA) for f in df_plot["faixa"]]
+
+    fig = go.Figure(
+        go.Bar(
+            x=df_plot["faixa"],
+            y=df_plot["valor_total"],
+            marker_color=cores_barras,
+            text=df_plot["valor_total"].apply(
+                lambda v: f"R$ {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+            ),
+            textposition="outside",
+            textfont=dict(color=COR_PRIMARIA, size=12),
+        )
+    )
+
     fig.update_layout(
-        yaxis_title=None, xaxis_title=None,
-        yaxis=dict(showgrid=False, showticklabels=False),
-        plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)'
+        title=dict(
+            text="<b>Volume de Dívida por Idade do Atraso</b>",
+            font=dict(color=COR_AMARELO, size=15),
+            x=0,
+        ),
+        plot_bgcolor=COR_FUNDO_PLOT,
+        paper_bgcolor=COR_FUNDO_PLOT,
+        xaxis=dict(
+            tickfont=dict(color=COR_PRIMARIA),
+            gridcolor=COR_GRADE,
+        ),
+        yaxis=dict(
+            showgrid=False,
+            showticklabels=False,
+        ),
+        margin=dict(l=10, r=10, t=55, b=30),
+        height=360,
+        showlegend=False,
     )
-    st.plotly_chart(fig, use_container_width=True)
 
-    st.divider()
+    st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False})
 
-    # Exibe a tabela detalhada com os nomes dos clientes devedores que vieram da API
-    st.markdown("### Detalhamento por Cliente")
-    
-    # Formata a data para exibição na tabela
-    df_atrasados['data_vencimento'] = df_atrasados['data_vencimento'].dt.strftime('%d/%m/%Y')
-    
-    # Adicionei a coluna 'status_pagamento' na tabela para você conferir visualmente que só tem 'Atrasado'
+    st.markdown("---")
+
+    # ── Tabela detalhada ──────────────────────────────────────────────────────
+    st.markdown(
+        f"<p style='font-weight:700; color:{COR_AMARELO}; font-size:1rem;'>"
+        "Detalhamento por Cliente</p>",
+        unsafe_allow_html=True,
+    )
+
+    df_atrasados["data_vencimento"] = df_atrasados["data_vencimento"].dt.strftime("%d/%m/%Y")
+
     st.dataframe(
-        df_atrasados[['nome_cliente', 'numero_processo', 'valor_em_aberto', 'data_vencimento', 'dias_atraso', 'status_pagamento']],
+        df_atrasados[[
+            "nome_cliente", "numero_processo",
+            "valor_em_aberto", "data_vencimento",
+            "dias_atraso", "status_pagamento",
+        ]],
         column_config={
-            "nome_cliente": "Cliente",
-            "numero_processo": "Processo",
-            "valor_em_aberto": st.column_config.NumberColumn("Valor Aberto", format="R$ %.2f"),
-            "data_vencimento": "Vencimento",
-            "dias_atraso": "Dias em Atraso",
-            "status_pagamento": "Status"
+            "nome_cliente":      "Cliente",
+            "numero_processo":   "Processo",
+            "valor_em_aberto":   st.column_config.NumberColumn("Valor Aberto", format="R$ %.2f"),
+            "data_vencimento":   "Vencimento",
+            "dias_atraso":       "Dias em Atraso",
+            "status_pagamento":  "Status",
         },
-        hide_index=True, use_container_width=True
+        hide_index=True,
+        use_container_width=True,
     )

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from sqlalchemy import desc, func
 from datetime import date, timedelta
 import sys
 from pathlib import Path
@@ -129,3 +129,86 @@ def buscar_prazos_para_email_exato(dias_exatos: int, db: Session = Depends(get_d
         })
         
     return {"data_alvo": data_alvo, "total_envios": len(resultado), "processos": resultado}
+
+@router.get("/status_vertente")
+def obter_status_por_vertente(db: Session = Depends(get_db)):
+    # tratar nulos e maiusculo/minusculo para evitar duplicidade
+    tipo_tratado = func.coalesce(func.upper(Processo.tipo_processo), "NÃO INFORMADO")
+    status_tratado = func.coalesce(func.upper(Processo.status), 'NÃO INFORMADO')
+
+    # query
+    resultados = db.query(
+        tipo_tratado.label('vertente'),
+        status_tratado.label('status'),
+        func.count(Processo.id).label('quantidade')
+    ).group_by(
+        tipo_tratado,
+        status_tratado
+    ).all()
+
+    # formatando a saída em JSON
+    dados_formatados = [
+        {"vertente": r.vertente, "status": r.status, "quantidade": r.quantidade} 
+        for r in resultados
+    ]
+
+    return {"dados_status_vertente": dados_formatados}
+
+@router.get("/carteira_advogados")
+def obter_carteira_advogados(db: Session = Depends(get_db)):
+    
+    # 1. Tratar status e nome do advogado (Evitar nulos e duplicidades por maiúsculas)
+    status_ativos = ['ATIVO', 'EM RECURSO'] 
+    status_tratado = func.upper(Processo.status)
+    advogado_tratado = func.coalesce(Processo.nome_advogado, "Não Atribuído")
+
+    # 2. Query de Agregação: Total a trabalhar, Ativos e Em Recurso
+    agrupamento = db.query(
+        advogado_tratado.label('nome_advogado'),
+        func.count(Processo.id).label('total_trabalhar'),
+        func.sum(case((status_tratado == 'ATIVO', 1), else_=0)).label('ativos'),
+        func.sum(case((status_tratado == 'EM RECURSO', 1), else_=0)).label('em_recurso')
+    ).filter(
+        status_tratado.in_(status_ativos)
+    ).group_by(
+        advogado_tratado
+    ).all()
+
+    carteira_final = []
+
+    # 3. Busca detalhada: Os top 5 prazos para cada carteira
+    for row in agrupamento:
+        nome_adv = row.nome_advogado
+        
+        # Encontra os processos desse advogado específico que não venceram
+        processos_adv = db.query(Processo).filter(
+            func.coalesce(Processo.nome_advogado, "Não Atribuído") == nome_adv,
+            func.upper(Processo.status).in_(status_ativos),
+            Processo.prazo_proximo != None,
+            Processo.prazo_proximo >= date.today()
+        ).order_by(asc(Processo.prazo_proximo)).limit(5).all()
+
+        lista_prazos = []
+        # Loop clássico para buscar o nome do cliente (Mantendo o seu padrão de arquitetura)
+        for proc in processos_adv:
+            cliente = db.query(Cliente).filter(Cliente.id == proc.cliente_id).first()
+            lista_prazos.append({
+                "numero_processo": proc.numero_processo,
+                "nome_cliente": cliente.nome if cliente else "Desconhecido",
+                "tipo_processo": proc.tipo_processo,
+                "status": proc.status,
+                "data_prazo": proc.prazo_proximo.isoformat() if proc.prazo_proximo else None
+            })
+
+        carteira_final.append({
+            "nome_advogado": nome_adv,
+            "total_trabalhar": int(row.total_trabalhar or 0),
+            "ativos": int(row.ativos or 0),
+            "em_recurso": int(row.em_recurso or 0),
+            "proximos_prazos": lista_prazos
+        })
+
+    # Ordena para que o advogado com mais processos apareça no topo da lista
+    carteira_final = sorted(carteira_final, key=lambda x: x['total_trabalhar'], reverse=True)
+
+    return {"carteira": carteira_final}
