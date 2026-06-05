@@ -37,7 +37,7 @@ def buscar_dados_status_vertente():
     link_final = f"{url_limpa}/ia/status_vertente"
 
     try:
-        resposta = requests.get(link_final, timeout=10)
+        resposta = requests.get(link_final, timeout=60)
         if resposta.status_code == 200:
             return resposta.json().get("dados_status_vertente", [])
         else:

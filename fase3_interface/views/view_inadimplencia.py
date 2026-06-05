@@ -39,7 +39,7 @@ def buscar_dados_inadimplencia():
     print(f"\n[DIAGNÓSTICO] O Streamlit está chamando: {link_final}\n")
 
     try:
-        resposta = requests.get(link_final, timeout=10)
+        resposta = requests.get(link_final, timeout=60)
         if resposta.status_code == 200:
             return resposta.json().get("detalhamento", [])
         else:

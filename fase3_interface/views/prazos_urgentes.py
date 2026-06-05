@@ -33,7 +33,7 @@ def buscar_dados_prazos(dias: int):
         resposta = requests.get(
             f"{API_URL}/ia/prazos_urgentes",
             params={"dias": dias},
-            timeout=10,
+            timeout=60,
         )
         if resposta.status_code == 200:
             return resposta.json().get("processos_urgentes", [])

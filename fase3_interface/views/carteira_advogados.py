@@ -30,7 +30,7 @@ def buscar_dados_carteira():
     try:
         resposta = requests.get(
             f"{API_URL}/ia/carteira_advogados",
-            timeout=10,
+            timeout=60,
         )
         if resposta.status_code == 200:
             return resposta.json().get("carteira", [])
