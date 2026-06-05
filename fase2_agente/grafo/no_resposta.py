@@ -65,7 +65,7 @@ def executar_no_de_resposta(pergunta_usuario: str, json_busca_str: str) -> str:
         if status == "bloqueio_seguranca" or status == "erro_critico":
             mensagem = resultado_busca.get("mensagem_orientacao", "Erro desconhecido.")
             print("[NÓ DE RESPOSTA] Repassando alerta de validação do roteador.")
-            return f"SISTEMA_VALIDACAO: {mensagem}"
+            return f"{mensagem}"
             
         elif status == "sucesso":
             dados_brutos = resultado_busca.get("dados_recuperados")

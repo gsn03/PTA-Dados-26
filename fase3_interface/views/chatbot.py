@@ -341,11 +341,9 @@ def renderizar_tela():
     """, unsafe_allow_html=True)
 
     if vazio:
-        # Detecta se o banner de aviso esta visivel neste momento
-        banner_ativo = (
-            st.session_state.get("qtd_criticos", 0) > 0
-            and st.session_state.get("ultima_data_interacao") != datetime.now().date()
-        )
+        # Confia no session_state calculado pelo app.py.
+        # qtd_criticos > 0 significa: ha processos criticos E o usuario nao fechou hoje.
+        banner_ativo = st.session_state.get("qtd_criticos", 0) > 0
 
         if banner_ativo:
             # COM banner: input fica na posicao nativa (base da tela).
