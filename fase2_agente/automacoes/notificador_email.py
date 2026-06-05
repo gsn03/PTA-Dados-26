@@ -13,7 +13,7 @@ EMAIL_EQUIPE = "ptaequipegustavo@gmail.com"
 def gerar_linhas_tabela(processos, cor_fundo):
     """Gera as linhas HTML dinâmicas baseadas nos dados da API"""
     if not processos:
-        return f"<tr><td colspan='4' style='padding: 10px; text-align: center; background-color: #f9f9f9; color: #777;'>Sem prazos para esta categoria hoje.</td></tr>"
+        return f"<tr><td colspan='5' style='padding: 10px; text-align: center; background-color: #f9f9f9; color: #777;'>Sem prazos para esta categoria hoje.</td></tr>"
 
     linhas = ""
     for p in processos:
@@ -21,6 +21,7 @@ def gerar_linhas_tabela(processos, cor_fundo):
         <tr style="background-color: {cor_fundo}; border-bottom: 1px solid #ddd;">
             <td style="padding: 10px;"><strong>{p['nome_cliente']}</strong></td>
             <td style="padding: 10px;">{p['numero_processo']}</td>
+            <td style="padding: 10px;">{p.get('advogado', 'Não informado')}</td>
             <td style="padding: 10px;">{p['prazo']}</td>
             <td style="padding: 10px;">{p['fase_atual']}</td>
         </tr>
@@ -61,6 +62,7 @@ def executar_relatorio_matinal():
                     <tr style="background-color: #c0392b; color: white;">
                         <th style="padding: 10px;">Cliente</th>
                         <th style="padding: 10px;">Processo</th>
+                        <th style="padding: 10px;">Advogado</th>
                         <th style="padding: 10px;">Data de Vencimento</th>
                         <th style="padding: 10px;">Fase Atual</th>
                     </tr>
@@ -76,6 +78,7 @@ def executar_relatorio_matinal():
                     <tr style="background-color: #f39c12; color: white;">
                         <th style="padding: 10px;">Cliente</th>
                         <th style="padding: 10px;">Processo</th>
+                        <th style="padding: 10px;">Advogado</th>
                         <th style="padding: 10px;">Data de Vencimento</th>
                         <th style="padding: 10px;">Fase Atual</th>
                     </tr>

@@ -136,8 +136,14 @@ def checar_inadimplencia_honorarios(nome_cliente: str = None) -> str:
             dados = resposta.json()
             detalhamento = dados.get("detalhamento", [])
             
-            # FILTRAGEM DIRETA: Mantém apenas os registros com status "Atrasado"
-            detalhamento = [d for d in detalhamento if str(d.get("status_pagamento", "")).lower() == "atrasado"]
+            # FILTRAGEM DIRETA: Mantém apenas registros com status "Atrasado" E valor real em aberto
+            # FIX (segunda camada de defesa): exclui valores <= 0 que escaparem da API,
+            # como erros de ponto flutuante (ex: -0.0199...) ou registros zerados.
+            detalhamento = [
+                d for d in detalhamento
+                if str(d.get("status_pagamento", "")).lower() == "atrasado"
+                and float(d.get("valor_em_aberto", 0) or 0) > 0
+            ]
             
             # FILTRAGEM DE NOME NO PYTHON
             if nome_cliente:
@@ -145,8 +151,8 @@ def checar_inadimplencia_honorarios(nome_cliente: str = None) -> str:
                 if not detalhamento:
                     return f"Excelente notícia. Não há nenhum contrato em atraso registrado para o cliente '{nome_cliente}'."
             
-            # OTIMIZAÇÃO: Ordena a dívida (da maior para a menor) e pega só os 15 piores
-            detalhamento = sorted(detalhamento, key=lambda x: float(x.get("valor_em_aberto", 0)), reverse=True)[:15]
+            # OTIMIZAÇÃO: Ordena pela data de vencimento (mais antigo primeiro) e pega só os 15 primeiros
+            detalhamento = sorted(detalhamento, key=lambda x: str(x.get("data_vencimento", "")))[:15]
 
             if not detalhamento:
                 return "Não há nenhum cliente com honorários atrasados no banco de dados."

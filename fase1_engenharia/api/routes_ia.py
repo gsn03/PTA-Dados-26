@@ -4,6 +4,7 @@ from sqlalchemy import desc, func, case, asc
 from datetime import date, timedelta
 import sys
 import os
+import re
 from pydantic import BaseModel
 from typing import List, Dict, Any
 from pathlib import Path
@@ -88,36 +89,6 @@ def responder_chat(requisicao: RequisicaoChat):
 
     return {"resposta": texto_final}
 
-#Histórico de Processo (Resolve o problema dos números duplicados)
-@router.get("/processo_historico")
-def buscar_historico_processo_ia(numero_processo: str, nome_cliente: str, db: Session = Depends(get_db)):
-    
-    #Encontrar o ID verdadeiro do cliente usando um filtro "parecido" (ilike)
-    cliente = db.query(Cliente).filter(Cliente.nome.ilike(f"%{nome_cliente}%")).first()
-    
-    if not cliente:
-        raise HTTPException(status_code=404, detail="Cliente não encontrado. Verifique o nome.")
-
-    #  Buscar APENAS os processos que têm aquele número E pertencem àquele cliente
-    # O 'order_by(desc())' garante que a data mais recente venha primeiro
-    historico = db.query(Processo).filter(
-        Processo.numero_processo == numero_processo,
-        Processo.cliente_id == cliente.id
-    ).order_by(desc(Processo.data_abertura)).all()
-    
-    if not historico:
-        raise HTTPException(status_code=404, detail="Nenhum processo encontrado para este cliente com este número.")
-
-    #  Estruturar a resposta para o LLM entender o que é o "agora" e o que é o "passado"
-    status_atual = historico[0]
-    fases_anteriores = historico[1:] if len(historico) > 1 else []
-
-    return {
-        "status_mais_recente": status_atual,
-        "historico_anterior": fases_anteriores,
-        "total_movimentacoes_registradas": len(historico)
-    }
-    
 #Prazos Urgentes (Para a Ferramenta de Alerta e Automação)
 @router.get("/prazos_urgentes")
 def buscar_prazos_urgentes_ia(dias: int = 7, db: Session = Depends(get_db)):
@@ -145,28 +116,107 @@ def buscar_prazos_urgentes_ia(dias: int = 7, db: Session = Depends(get_db)):
         
     return {"total_prazos": len(resultado), "processos_urgentes": resultado}
 
-#Inadimplência Financeira (Para a Ferramenta de Honorários)
+# Inadimplência Financeira (Atrasos até a data atual e correção do Erro 500)
 @router.get("/inadimplencia")
 def relatorio_inadimplencia_ia(db: Session = Depends(get_db)):
+    from datetime import date # Garante a importação da data
     
-    # Busca todos os contratos cujo status NÃO É 'Pago'
+    # Captura a data de hoje no formato YYYY-MM-DD
+    data_hoje_str = str(date.today())
+    
+    # 1. Puxamos do banco apenas os contratos não pagos (sem matemática no SQL)
     contratos_pendentes = db.query(contrato_honorario).filter(
         contrato_honorario.status_pagamento != "Pago"
     ).all()
     
     resultado = []
     for contrato in contratos_pendentes:
-        cliente = db.query(Cliente).filter(Cliente.id == contrato.cliente_id).first()
-        resultado.append({
-            "nome_cliente": cliente.nome if cliente else "Desconhecido",
-            "contato_cliente": cliente.contato if cliente else "Sem contato",
-            "numero_processo": contrato.numero_processo,
-            "valor_em_aberto": contrato.valor_em_aberto,
-            "status_pagamento": contrato.status_pagamento,
-            "data_vencimento": contrato.data_vencimento
-        })
-        
+        # 2. Conversão segura no Python: transforma o texto VARCHAR em Número (Float)
+        try:
+            # Substitui possível vírgula por ponto para o Python entender
+            valor_texto = str(contrato.valor_em_aberto).replace(',', '.')
+            valor_num = float(valor_texto)
+        except ValueError:
+            valor_num = 0.0
+            
+        # 3. Filtra apenas os que têm dívida real E que já venceram (data <= hoje)
+        if valor_num > 0 and contrato.data_vencimento and str(contrato.data_vencimento) <= data_hoje_str:
+            cliente = db.query(Cliente).filter(Cliente.id == contrato.cliente_id).first()
+            resultado.append({
+                "nome_cliente": cliente.nome if cliente else "Desconhecido",
+                "contato_cliente": cliente.contato if cliente else "Sem contato",
+                "numero_processo": contrato.numero_processo,
+                "valor_em_aberto": contrato.valor_em_aberto, # Mantém o texto original para exibição
+                "status_pagamento": contrato.status_pagamento,
+                "data_vencimento": contrato.data_vencimento
+            })
+            
     return {"total_inadimplentes": len(resultado), "detalhamento": resultado}
+
+# Histórico de Processo (Busca ancorada no ID do Cliente para suportar processos com múltiplos autores)
+@router.get("/processo_historico")
+def buscar_historico_processo_ia(numero_processo: str, nome_cliente: str, db: Session = Depends(get_db)):
+    import re
+    
+    # 1. Encontrar o cliente pelo nome (Trazemos todos os IDs que derem 'match' para evitar falhas com homônimos)
+    nome_cliente_limpo = nome_cliente.strip()
+    clientes = db.query(Cliente).filter(Cliente.nome.ilike(f"%{nome_cliente_limpo}%")).all()
+    
+    if not clientes:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado no banco de dados.")
+
+    # Extrair a lista de IDs auto-incrementáveis desses clientes
+    ids_clientes = [c.id for c in clientes]
+
+    # 2. Buscar TODOS os processos atrelados EXCLUSIVAMENTE aos IDs desse cliente
+    processos_do_cliente = db.query(Processo).filter(
+        Processo.cliente_id.in_(ids_clientes)
+    ).order_by(desc(Processo.data_abertura)).all()
+    
+    # 3. Limpar a pontuação do número que a IA enviou
+    num_buscado_limpo = re.sub(r'[^0-9]', '', numero_processo)
+    
+    historico = []
+    
+    # 4. O Python procura o número exato apenas dentro da "pasta" deste cliente
+    for proc in processos_do_cliente:
+        if not proc.numero_processo:
+            continue
+            
+        num_banco_limpo = re.sub(r'[^0-9]', '', proc.numero_processo)
+        
+        # Exige igualdade estrita dos números limpos e bloqueia strings vazias
+        if num_buscado_limpo and num_banco_limpo and (num_buscado_limpo == num_banco_limpo):
+            historico.append(proc)
+            
+    if not historico:
+        raise HTTPException(status_code=404, detail=f"O processo {numero_processo} não foi encontrado para o cliente {nome_cliente}.")
+
+    # 5. Construção da Resposta
+    status_atual = historico[0]
+    dict_atual = {
+        "numero_processo": status_atual.numero_processo,
+        "fase": status_atual.fase,
+        "status": status_atual.status,
+        "data_abertura": status_atual.data_abertura.isoformat() if status_atual.data_abertura else "Sem data"
+    }
+    
+    fases_anteriores = []
+    if len(historico) > 1:
+        for andamento in historico[1:]:
+            fases_anteriores.append({
+                "numero_processo": andamento.numero_processo,
+                "fase": andamento.fase,
+                "status": andamento.status,
+                "data_abertura": andamento.data_abertura.isoformat() if andamento.data_abertura else "Sem data"
+            })
+
+    return {
+        "status_mais_recente": dict_atual,
+        "historico_anterior": fases_anteriores,
+        "total_movimentacoes_registradas": len(historico)
+    }
+    
 
 @router.get("/alertas_email")
 def buscar_prazos_para_email_exato(dias_exatos: int, db: Session = Depends(get_db)):
@@ -176,7 +226,6 @@ def buscar_prazos_para_email_exato(dias_exatos: int, db: Session = Depends(get_d
     """
     data_alvo = date.today() + timedelta(days=dias_exatos)
     
-    # Busca APENAS os processos que vencem NAQUELA data exata
     processos_alvo = db.query(Processo).filter(
         Processo.prazo_proximo == data_alvo
     ).all()
@@ -187,6 +236,7 @@ def buscar_prazos_para_email_exato(dias_exatos: int, db: Session = Depends(get_d
         resultado.append({
             "numero_processo": proc.numero_processo,
             "nome_cliente": cliente.nome if cliente else "Desconhecido",
+            "advogado": proc.nome_advogado, # INJEÇÃO DO ADVOGADO AQUI
             "prazo": proc.prazo_proximo,
             "fase_atual": proc.fase
         })

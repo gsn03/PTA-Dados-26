@@ -66,11 +66,11 @@ def _tabela_processos(processos: list):
         column_config={
             "numero_processo": st.column_config.TextColumn("Processo",   width="medium"),
             "nome_cliente":    st.column_config.TextColumn("Cliente",    width="medium"),
+            "advogado":        st.column_config.TextColumn("Advogado",   width="medium"),
             "prazo":           st.column_config.TextColumn("Vencimento", width="small"),
             "fase_atual":      st.column_config.TextColumn("Fase Atual", width="medium"),
         },
     )
-
 
 # ── View principal ────────────────────────────────────────────────────────────
 def renderizar_tela():
