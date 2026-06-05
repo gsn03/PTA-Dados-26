@@ -21,7 +21,7 @@ from tools import lista_de_ferramentas
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import SystemMessage, HumanMessage
 
-llm_roteador = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
+llm_roteador = ChatGoogleGenerativeAI(model=os.getenv("LLM_MODEL", "gemini-2.5-flash"), temperature=0)
 
 # "Ensinando" as ferramentas ao LLM
 # O método bind_tools conecta as nossas 4 ferramentas Python ao cérebro do Gemini
