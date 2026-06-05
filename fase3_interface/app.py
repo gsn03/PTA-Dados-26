@@ -44,7 +44,7 @@ horario_gatilho = time(8, 30)
 deve_exibir_notificacao = agora.time() >= horario_gatilho and st.session_state.ultima_data_interacao != hoje
 
 if deve_exibir_notificacao and "qtd_criticos" not in st.session_state:
-    API_URL = os.getenv("API_KEY", "http://127.0.0.1:8000")
+    API_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
     try:
         resposta = requests.get(f"{API_URL}/ia/alertas_email", params={"dias_exatos": 5}, timeout=5)
         processos_criticos = resposta.json().get("processos", []) if resposta.status_code == 200 else []
