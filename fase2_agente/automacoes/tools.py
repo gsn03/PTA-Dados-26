@@ -38,6 +38,9 @@ def buscar_jurisprudencia_documentos(pergunta: str) -> str:
     """
     try:
         resultado = buscar_contexto_semantico(pergunta)
+        print("\n--- [DEBUG] RETORNO EXATO DO BANCO VETORIAL ---")
+        print(resultado)
+        print("-------------------------------------------------\n")
         if not resultado.strip():
             return "RESULTADO_SISTEMA: Nenhum trecho de documento relevante foi encontrado para esta pergunta."
         return resultado
