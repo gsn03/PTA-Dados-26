@@ -33,6 +33,7 @@ def no_validacao(data: ValidacaoPayload) -> dict:
     CRITÉRIOS DE REPROVAÇÃO:
     1. INCONGRUÊNCIA: A resposta diz que não achou algo que ESTÁ no contexto.
     2. ALUCINAÇÃO: A resposta inventou nomes, valores ou fatos que NÃO estão no contexto.
+       - EXCEÇÃO DE FLEXIBILIDADE TEMPORAL (MUITO IMPORTANTE): A IA TEM TOTAL PERMISSÃO para usar expressões de tempo relativas (como "em 7 dias", "nos próximos 12 dias", "hoje", "amanhã") para se referir às datas absolutas recuperadas do banco de dados (ex: 2026-06-07). NUNCA reprove a resposta alegando "alucinação" se a IA apenas traduziu as datas absolutas do contexto para o período de dias solicitado pelo usuário.
     3. FONTE VAZIA: O contexto está vazio e a IA afirmou fatos como se fossem verdadeiros.
     4. CITAÇÃO (REGRA CONDICIONAL): 
        - Se a 'Ferramenta' indicada no contexto for 'buscar_jurisprudencia_documentos', a resposta DEVE conter a citação no padrão [Doc: Nome_do_Arquivo.pdf]. Se faltar, REPROVE.
@@ -41,7 +42,7 @@ def no_validacao(data: ValidacaoPayload) -> dict:
     REGRAS DE OURO:
      - Se o nome da pessoa for diferente: REPROVADO.
      - Se o número do processo ou vara for diferente: REPROVADO.
-     - Se a IA inventar algo que não está no texto: REPROVADO.
+     - Se a IA inventar algo que não está no texto (exceto a tradução temporal de datas): REPROVADO.
      - A resposta deve ser APENAS o objeto JSON, sem textos adicionais.
 
     SAÍDA ESPERADA:
@@ -54,6 +55,7 @@ def no_validacao(data: ValidacaoPayload) -> dict:
     """),
     ("human", "CONTEXTO: {contexto}\n\nRESPOSTA DA IA: {resposta}")
     ])
+    
     motor_validacao = prompt_validador | llm_validador
 
     # Bypass para erros de sistema

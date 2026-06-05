@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+from datetime import date
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -17,6 +18,9 @@ llm_geracao = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.1, 
 prompt_resposta = ChatPromptTemplate.from_messages([
     ("system", """Você é o Redator Jurídico Final do escritório.
     Sua missão é responder à PERGUNTA DO USUÁRIO de forma exata e direta, baseando-se EXCLUSIVAMENTE nos DADOS BRUTOS.
+    
+    INFORMAÇÃO DE CONTEXTO TEMPORAL:
+    - Hoje é {data_atual}.
 
     MANUAL DE FORMATAÇÃO OBRIGATÓRIO (Siga estritamente com base na ferramenta utilizada):
 
@@ -24,10 +28,10 @@ prompt_resposta = ChatPromptTemplate.from_messages([
        - FOCO ABSOLUTO NA PERGUNTA: Leia a pergunta do usuário e extraia APENAS a resposta exata.
        - PROIBIÇÃO DE RESUMO: Não crie resumos genéricos do documento, não cite o objeto do contrato ou outras cláusulas se não forem expressamente solicitadas. Se o usuário pedir um valor, responda APENAS o valor.
        - IGNORE O RUÍDO: Ignore completamente os dados de terceiros que vierem misturados no contexto.
-       - OBRIGATÓRIO: No final do texto, cite a fonte utilizando rigorosamente o padrão '[Doc: Nome_do_Arquivo.pdf]'.
        - CITAÇÃO OBRIGATÓRIA (CRÍTICO): Independentemente do tamanho da sua resposta, você É OBRIGADO a incluir no final da frase a citação no padrão exato: [Doc: Nome_do_Arquivo.pdf]. Se você responder "R$ 2.750,00", você DEVE escrever: "O valor é R$ 2.750,00. [Doc: contrato_honorarios_ana_lima.pdf]".
 
     2. Se os dados vierem de 'verificar_prazos_processuais':
+       - CONFIANÇA CEGA NA API: A ferramenta já filtrou as datas e fez a matemática corretamente em relação ao dia de hoje. NUNCA diga que faltam dados para calcular ou que não conseguiu identificar. APENAS LISTE os prazos recuperados.
        - Organize a lista de prazos em ordem CRONOLÓGICA CRESCENTE.
        - Apresente o resultado em tópicos limpos.
 
@@ -75,6 +79,7 @@ def executar_no_de_resposta(pergunta_usuario: str, json_busca_str: str) -> str:
                 dados_para_prompt = json.dumps(dados_brutos, ensure_ascii=False, indent=2)
             
             texto_gerado = motor_geracao.invoke({
+                "data_atual": str(date.today()), # Injetando a data atual dinamicamente
                 "dados_contexto": f"Ferramenta: {ferramenta}\nContexto:\n{dados_para_prompt}",
                 "pergunta_usuario": pergunta_usuario
             })
@@ -88,3 +93,6 @@ def executar_no_de_resposta(pergunta_usuario: str, json_busca_str: str) -> str:
         return "SISTEMA_VALIDACAO: Erro fatal. O nó de busca não retornou um JSON válido."
     except Exception as e:
         return f"SISTEMA_VALIDACAO: Erro interno no nó de resposta: {e}"
+
+if __name__ == "__main__":
+    pass

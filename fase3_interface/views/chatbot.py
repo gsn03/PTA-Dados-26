@@ -97,6 +97,10 @@ def enviar_mensagem_api(mensagem: str, historico: list) -> str:
 
     try:
         resposta = requests.post(link_final, json=payload, timeout=90)
+        
+        # ADICIONE ESTAS DUAS LINHAS:
+        if resposta.status_code == 422:
+            print(f"🕵️ DETALHE DO ERRO 422: {resposta.text}")
         if resposta.status_code == 200:
             return resposta.json().get("resposta", "Sem resposta do servidor.")
         return f"⚠️ Erro na API: Código {resposta.status_code}"
