@@ -4,6 +4,7 @@ from sqlalchemy import desc, func, case, asc
 from datetime import date, timedelta
 import sys
 from pathlib import Path
+from pydantic import BaseModel
 
 # Ajuste de caminho idêntico ao das suas outras rotas
 pasta_bd = Path(__file__).parent.parent / "BD"
@@ -30,7 +31,7 @@ class RequisicaoChat(BaseModel):
     historico: List[Dict[str, Any]] = []
 
 # criamos a rota exata que o frontend está chamando
-@app.post("/ia/chat")
+@router.post("/ia/chat")
 async def responder_chat(requisicao: RequisicaoChat):
     pergunta = requisicao.pergunta
     historico = requisicao.historico
