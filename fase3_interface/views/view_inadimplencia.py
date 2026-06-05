@@ -39,7 +39,7 @@ def buscar_dados_inadimplencia():
     print(f"\n[DIAGNÓSTICO] O Streamlit está chamando: {link_final}\n")
 
     try:
-        resposta = requests.get(link_final, timeout=10)
+        resposta = requests.get(link_final, timeout=60)
         if resposta.status_code == 200:
             return resposta.json().get("detalhamento", [])
         else:
@@ -77,12 +77,10 @@ def renderizar_tela():
         st.success("Todos os contratos estão em dia ou quitados!")
         return
 
-    # Calcular dias de atraso
     df_bruto["data_vencimento"] = pd.to_datetime(df_bruto["data_vencimento"])
     hoje = pd.to_datetime(datetime.now().date())
+    df_bruto = df_bruto[df_bruto["data_vencimento"] < hoje]
     df_bruto["dias_atraso"] = (hoje - df_bruto["data_vencimento"]).dt.days
-    df_bruto.loc[df_bruto["dias_atraso"] <= 0, "dias_atraso"] = 1
-
     df_atrasados = df_bruto.copy()
 
     def definir_faixa(dias):

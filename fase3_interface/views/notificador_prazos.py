@@ -32,7 +32,7 @@ def _buscar_alertas(dias_exatos: int):
         resposta = requests.get(
             f"{API_URL}/ia/alertas_email",
             params={"dias_exatos": dias_exatos},
-            timeout=10,
+            timeout=60,
         )
         if resposta.status_code == 200:
             return resposta.json().get("processos", [])
