@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 pasta_raiz = Path(__file__).resolve().parent.parent.parent
 load_dotenv(pasta_raiz / ".env", override=True)
 
-API_URL = os.getenv("API_KEY", "http://127.0.0.1:8000")
+API_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
 
 # ── Paleta ───────────────────────────────────────────────────────────────────
 COR_PRIMARIA   = "#44464a"   # cinza escuro
