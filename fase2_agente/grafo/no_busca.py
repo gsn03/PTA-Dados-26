@@ -37,48 +37,36 @@ def executar_no_de_busca(entrada_texto: str) -> str:
     valida regras de negócio rigorosas e devolve o contexto do Banco de Dados.
     """
     
-# A INSTRUÇÃO RIGOROSA DE SEGURANÇA (O System Prompt do nosso nó)
-    prompt_sistema = SystemMessage(content="""
-    Você é o Roteador de Ferramentas de um sistema jurídico de elite.
-    A sua ÚNICA função é ler a frase do usuário e acionar a ferramenta correta.
-    
-    REGRAS CRÍTICAS DE VALIDAÇÃO:
-    1. Se a intenção for buscar o histórico/status de um processo, você DEVE acionar a ferramenta 'buscar_historico_processo'.
-    2. PROIBIÇÃO HISTÓRICO: A ferramenta 'buscar_historico_processo' exige o número do processo E o nome do cliente. 
-       Se o usuário NÃO fornecer o nome do cliente na frase, NÃO acione a ferramenta. 
-       Responda EXATAMENTE: 'SISTEMA_VALIDACAO: Para consultar este processo, por favor, informe também o nome do cliente associado.'
-    3. REGRA DOS PRAZOS: Se o usuário perguntar sobre prazos urgentes, mas NÃO especificar a quantidade de dias (ex: "Quais os prazos urgentes?"), 
-       acione a ferramenta 'verificar_prazos_processuais' usando o valor padrão de 10 dias.
-    4. Se não precisar de ferramentas, apenas responda normalmente.
-    
-    A Proibição de Escopo: "Se a pergunta do utilizador NÃO tiver nenhuma relação com processos, prazos, clientes, finanças do escritório ou documentos jurídicos, NÃO acione nenhuma ferramenta.
-    Responda: 'SISTEMA_VALIDACAO: Sou um agente restrito ao contexto do escritório. Não posso responder a perguntas fora deste escopo.'
-    
-    A Proibição de Funções Inexistentes: "Se o usuário pedir para executar uma tarefa jurídica (ex: redigir petição, agendar audiência, enviar e-mail), NÃO invente ferramentas. 
-    Responda EXATAMENTE: 'SISTEMA_VALIDACAO: Não possuo uma ferramenta integrada para realizar esta ação específica. Minhas funções atuais são exclusivas para busca de dados e documentos.'"
-    
-    A Proibição Financeira: "A ferramenta 'checar_inadimplencia_honorarios' não aceita parâmetros.
-    Se o utilizador perguntar sobre a dívida de um cliente específico, acione a ferramenta SEM parâmetros."
-    
-    A Proibição Vetorial: "Para acionar a ferramenta 'buscar_jurisprudencia_documentos', a pergunta deve conter um tema ou assunto claro. 
-    Se o utilizador disser apenas 'busque um documento', NÃO acione a ferramenta. 
-    Responda: 'SISTEMA_VALIDACAO: Sobre qual tema, cliente ou processo deseja que eu busque nos documentos?'"
-    
-    5. MÚLTIPLAS INTENÇÕES (PARALLEL CALLING): Se a pergunta do usuário exigir buscar mais de uma informação distinta
-    (exemplo: "Qual o status do processo X E qual a dívida do cliente Y?"), você TEM PERMISSÃO para acionar DUAS OU MAIS ferramentas simultaneamente.
-    
-    6. FILTROS OBRIGATÓRIOS: As ferramentas 'verificar_prazos_processuais' e 'checar_inadimplencia_honorarios' trazem TODO o banco de dados. Para evitar sobrecarga:
-       - Se o usuário citar um cliente ou processo, você DEVE preencher os parâmetros 'nome_cliente' ou 'numero_processo' nas ferramentas.
-       - Só deixe os parâmetros em branco se o usuário pedir o cenário geral (ex: "quem são todos os devedores?").
-    
-    """)
 
-    
+    prompt_sistema = SystemMessage(content="""
+        Você é o Roteador de Ferramentas de um sistema jurídico de elite.
+        A sua ÚNICA função é ler a frase do usuário e acionar a ferramenta correta.
+        
+        REGRAS CRÍTICAS DE VALIDAÇÃO:
+        1. HISTÓRICO E STATUS: Se a frase pedir o histórico, status ou andamento de um processo E contiver o nome do cliente, você DEVE acionar a ferramenta 'buscar_historico_processo' preenchendo os dois parâmetros ('numero_processo' e 'nome_cliente').
+        
+        2. REGRA DO NOME AUSENTE: Se a frase pedir o histórico/status de um processo, mas NÃO contiver o nome do cliente, NÃO acione a ferramenta. Responda APENAS com este texto exato: 'SISTEMA_VALIDACAO: Para consultar este processo, por favor, informe também o nome do cliente associado.'
+        
+        3. REGRA DOS PRAZOS: Se a pergunta for sobre prazos ou processos urgentes, acione a ferramenta 'verificar_prazos_processuais'. 
+       - Se o usuário informar a quantidade de dias (ex: 7 dias, 15 dias, 30 dias), extraia esse número e passe-o como parâmetro 'dias'.
+       - Se o usuário NÃO especificar os dias, acione a ferramenta usando o valor padrão de 10 dias.
+       
+        4. PROIBIÇÃO DE ESCOPO: Se o assunto não tiver relação com processos, prazos, finanças, documentos ou vir vazio(sem nenhuma palavra), responda APENAS: 'SISTEMA_VALIDACAO: Sou um agente restrito ao contexto do escritório. Não posso responder a perguntas fora deste escopo.'
+        
+        5. AÇÕES INEXISTENTES: Se pedirem para redigir petição, enviar e-mail ou agendar algo, responda APENAS: 'SISTEMA_VALIDACAO: Não possuo uma ferramenta integrada para realizar esta ação. Minhas funções são exclusivas para busca de dados.'
+        
+        6. HONORÁRIOS: Para saber de dívidas ou inadimplência, acione 'checar_inadimplencia_honorarios'. Se for de um cliente específico, use o parâmetro 'nome_cliente'.
+        
+        7. DOCUMENTOS E CONTRATOS: Se perguntarem sobre valores, cláusulas, parcelas, bancos ou detalhes de um CONTRATO específico de um cliente, DEVE acionar a ferramenta 'buscar_jurisprudencia_documentos'.
+        """)
+
+        
     mensagem_usuario = HumanMessage(content=entrada_texto)
     try:
         print(f"[NÓ DE BUSCA] Analisando a entrada: '{entrada_texto}'...")
         
         resposta_ia = llm_com_ferramentas.invoke([prompt_sistema, mensagem_usuario])
+        
         
         # CENÁRIO A: A IA decidiu chamar uma ferramenta
         # CENÁRIO A: A IA decidiu chamar uma ou mais ferramentas
@@ -115,9 +103,14 @@ def executar_no_de_busca(entrada_texto: str) -> str:
         # CENÁRIO B: A IA foi bloqueada pela nossa regra de segurança
         else:
             print("[NÓ DE BUSCA] Regra de Validação ativada.")
+            # Garante que, se a IA devolver um texto vazio, nós injetamos um aviso padrão
+            texto_alerta = resposta_ia.content.strip()
+            if not texto_alerta:
+                texto_alerta = "SISTEMA_VALIDACAO: Não consegui processar a solicitação. Por favor, seja mais específico."
+                
             resposta_padronizada = {
                 "status": "bloqueio_seguranca",
-                "mensagem_orientacao": resposta_ia.content
+                "mensagem_orientacao": texto_alerta
             }
             return json.dumps(resposta_padronizada, ensure_ascii=False, indent=2)
 

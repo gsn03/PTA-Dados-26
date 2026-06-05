@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+from datetime import date
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -16,34 +17,33 @@ llm_geracao = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.1, 
 
 prompt_resposta = ChatPromptTemplate.from_messages([
     ("system", """Você é o Redator Jurídico Final do escritório.
-    Sua única missão é ler os DADOS BRUTOS fornecidos pelo sistema e redigir uma resposta elegante, clara e direta para a pergunta do usuário.
+    Sua missão é responder à PERGUNTA DO USUÁRIO de forma exata e direta, baseando-se EXCLUSIVAMENTE nos DADOS BRUTOS.
+    
+    INFORMAÇÃO DE CONTEXTO TEMPORAL:
+    - Hoje é {data_atual}.
 
     MANUAL DE FORMATAÇÃO OBRIGATÓRIO (Siga estritamente com base na ferramenta utilizada):
 
     1. Se os dados vierem de 'buscar_jurisprudencia_documentos' (Busca Semântica em PDFs):
-       - ATENÇÃO RIGOROSA AO FILTRO: Identifique na 'PERGUNTA DO USUÁRIO' exatamente qual cliente ou documento foi solicitado.
-       - Analise os dados brutos e CRIE O RESUMO APENAS para os documentos que correspondam EXATAMENTE à pessoa ou tema pedido. 
-       - DESCARTE E IGNORE COMPLETAMENTE documentos de terceiros ou homônimos (ex: se pediu "Fernanda Costa", ignore "Fernanda Melo").
-       - Crie um resumo estruturado em tópicos (bullet points) destacando apenas as informações cruciais (Valores, Partes envolvidas, Objeto do documento) do arquivo correto.
-       - OBRIGATÓRIO: No final do texto ou parágrafo, cite a fonte utilizando rigorosamente o padrão '[Doc: Nome_do_Arquivo.pdf]'. Nunca use outro formato, pois o validador exige exatamente esse padrão com colchetes.
+       - FOCO ABSOLUTO NA PERGUNTA: Leia a pergunta do usuário e extraia APENAS a resposta exata.
+       - PROIBIÇÃO DE RESUMO: Não crie resumos genéricos do documento, não cite o objeto do contrato ou outras cláusulas se não forem expressamente solicitadas. Se o usuário pedir um valor, responda APENAS o valor.
+       - IGNORE O RUÍDO: Ignore completamente os dados de terceiros que vierem misturados no contexto.
+       - CITAÇÃO OBRIGATÓRIA (CRÍTICO): Independentemente do tamanho da sua resposta, você É OBRIGADO a incluir no final da frase a citação no padrão exato: [Doc: Nome_do_Arquivo.pdf]. Se você responder "R$ 2.750,00", você DEVE escrever: "O valor é R$ 2.750,00. [Doc: contrato_honorarios_ana_lima.pdf]".
 
     2. Se os dados vierem de 'verificar_prazos_processuais':
-       - Pegue a lista de prazos recebida e organize-a em ordem CRONOLÓGICA CRESCENTE (do prazo mais urgente/próximo para o mais distante).
+       - CONFIANÇA CEGA NA API: A ferramenta já filtrou as datas e fez a matemática corretamente em relação ao dia de hoje. NUNCA diga que faltam dados para calcular ou que não conseguiu identificar. APENAS LISTE os prazos recuperados.
+       - Organize a lista de prazos em ordem CRONOLÓGICA CRESCENTE.
        - Apresente o resultado em tópicos limpos.
 
     3. Se os dados vierem de 'buscar_historico_processo':
-       - Divida a resposta em dois blocos visuais bem definidos: 
-         * '📌 STATUS ATUAL' (Com as principais informações da fase e status atual)
-         * '⏳ HISTÓRICO DE ANDAMENTOS' (Um resumo cronológico simplificado dos andamentos passados).
+       - Divida a resposta em dois blocos: '📌 STATUS ATUAL' e '⏳ HISTÓRICO DE ANDAMENTOS'.
 
     4. Se os dados vierem de 'checar_inadimplencia_honorarios':
-       - Liste os devedores em tópicos (bullet points) bem definidos.
-       - Para cada registro, informe explicitamente: o nome do cliente, o valor da dívida atual, a data de vencimento e, se disponível nos dados brutos, detalhe quantas parcelas já foram pagas pelo cliente.
+       - Liste os devedores em tópicos informando: nome, valor, vencimento e status.
 
     REGRAS GERAIS DE CONGRUÊNCIA:
-    - Baseie-se APENAS nos dados fornecidos no contexto. NUNCA invente prazos, valores, nomes ou status.
-    - RESPEITO AOS DADOS: Se a ferramenta informar que 'Nenhum prazo foi encontrado' ou 'Não há dívidas', repasse essa exata informação ao usuário de forma natural. Não altere os resultados negativos originais. Não tente reordenar listas numéricas, apenas exiba os dados na ordem exata em que foram recebidos no contexto.
-    - Seja direto. Não explique o funcionamento técnico do sistema para o cliente.
+    - Baseie-se APENAS nos dados fornecidos no contexto. NUNCA invente prazos, valores ou nomes.
+    - Seja direto, objetivo e profissional. Não explique o funcionamento técnico do sistema.
     """),
     ("human", "PERGUNTA DO USUÁRIO: '{pergunta_usuario}'\n\nDADOS BRUTOS DO SISTEMA:\n{dados_contexto}")
 ])
@@ -79,6 +79,7 @@ def executar_no_de_resposta(pergunta_usuario: str, json_busca_str: str) -> str:
                 dados_para_prompt = json.dumps(dados_brutos, ensure_ascii=False, indent=2)
             
             texto_gerado = motor_geracao.invoke({
+                "data_atual": str(date.today()), # Injetando a data atual dinamicamente
                 "dados_contexto": f"Ferramenta: {ferramenta}\nContexto:\n{dados_para_prompt}",
                 "pergunta_usuario": pergunta_usuario
             })
@@ -92,3 +93,6 @@ def executar_no_de_resposta(pergunta_usuario: str, json_busca_str: str) -> str:
         return "SISTEMA_VALIDACAO: Erro fatal. O nó de busca não retornou um JSON válido."
     except Exception as e:
         return f"SISTEMA_VALIDACAO: Erro interno no nó de resposta: {e}"
+
+if __name__ == "__main__":
+    pass

@@ -6,17 +6,39 @@
 /* ---------- Importação de fonte ---------- */
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&display=swap');
 
-/* ---------- Reset & Fundo geral ---------- */
-html, body, [data-testid="stAppViewContainer"] {
-    background-color: #f5f5f5 !important;
+/* ---------- Reset & Fundo Geral com Degradê (TODAS AS PÁGINAS) ---------- */
+html, body, .stApp {
+    background: linear-gradient(to right, #ebebeb 0%, #f4f4f4 35%, #ffffff 100%) !important;
+    background-attachment: fixed !important;
+    min-height: 100vh !important;
+    font-family: 'Barlow', sans-serif !important;
+    margin: 0;
+    padding: 0;
+}
+
+/* Transparência profunda dos containers nativos do Streamlit para o fundo aparecer globalmente */
+[data-testid="stAppViewContainer"],
+[data-testid="stMain"],
+[data-testid="stHeader"],
+[data-testid="stBottomBlockContainer"],
+div[class*="stBottomBlockContainer"],
+div:has(> [data-testid="stBottomBlockContainer"]),
+section[data-testid="stSidebar"] ~ div {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
     font-family: 'Barlow', sans-serif !important;
 }
 
-[data-testid="stMain"] {
-    background-color: #f5f5f5 !important;
+/* Remove a máscara sólida nativa do Streamlit que corta o degradê na base */
+[data-testid="stBottomBlockContainer"]::before,
+[data-testid="stBottomBlockContainer"]::after,
+div[class*="stBottomBlockContainer"]::before,
+div[class*="stBottomBlockContainer"]::after {
+    display: none !important;
+    background: transparent !important;
 }
 
-/* CORREÇÃO AQUI: Aumentado de 1.2rem para 4.5rem para afastar o conteúdo da barra superior do Streamlit */
 [data-testid="stMainBlockContainer"] {
     padding-top: 4.5rem !important;
 }
@@ -44,7 +66,7 @@ html, body, [data-testid="stAppViewContainer"] {
     letter-spacing: 0.01em !important;
 }
 
-/* ---------- Botões principais da sidebar (Estilo Corporativo/Sério) ---------- */
+/* ---------- Botões principais da sidebar ---------- */
 [data-testid="stSidebar"] .stButton > button {
     background: linear-gradient(180deg, #575a5e 0%, #44464a 100%) !important;
     color: #ffffff !important;
@@ -64,7 +86,6 @@ html, body, [data-testid="stAppViewContainer"] {
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
 }
 
-/* Hover: Efeito mais claro e subida em Y */
 [data-testid="stSidebar"] .stButton > button:hover {
     background: linear-gradient(180deg, #0a5f87 0%, #084d6e 100%) !important;
     border-color: #05364d !important;
@@ -72,7 +93,6 @@ html, body, [data-testid="stAppViewContainer"] {
     box-shadow: 0 4px 8px rgba(8, 77, 110, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
 }
 
-/* Botão ativo/selecionado (primary): Fica cravado no Azul Petróleo com sombra interior marcada */
 [data-testid="stSidebar"] .stButton > button[kind="primary"],
 [data-testid="stSidebar"] .stButton > button[data-baseweb="button"][kind="primary"] {
     background: linear-gradient(180deg, #09587d 0%, #063e59 100%) !important;
@@ -82,8 +102,6 @@ html, body, [data-testid="stAppViewContainer"] {
 }
 
 /* ── Sub-botões de Gráficos (Dentro do Container) ──────────────────────────── */
-
-/* Estilo Base Sub-botão: Fundo texturizado claro, aspeto matte */
 [data-testid="stSidebar"] [data-testid="stVerticalBlock"] [data-testid="stVerticalBlock"] .stButton > button {
     background: linear-gradient(180deg, #f7f9fa 0%, #e6ecef 100%) !important;
     color: #2b3036 !important;
@@ -97,11 +115,9 @@ html, body, [data-testid="stAppViewContainer"] {
     padding: 0.4rem 0.85rem 0.4rem 0.85rem !important;
     margin-left: 0.7rem !important;
     width: calc(100% - 0.7rem) !important;
-    letter-spacing: 0 !important;
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) !important;
 }
 
-/* Hover no Sub-botão */
 [data-testid="stSidebar"] [data-testid="stVerticalBlock"] [data-testid="stVerticalBlock"] .stButton > button:hover {
     background: linear-gradient(180deg, #ffffff 0%, #eff4f7 100%) !important;
     color: #084d6e !important;
@@ -110,7 +126,6 @@ html, body, [data-testid="stAppViewContainer"] {
     border-color: #c2d1d9 !important;
 }
 
-/* Sub-botão ativo/selecionado (primary) */
 [data-testid="stSidebar"] [data-testid="stVerticalBlock"] [data-testid="stVerticalBlock"] .stButton > button[kind="primary"],
 [data-testid="stSidebar"] [data-testid="stVerticalBlock"] [data-testid="stVerticalBlock"] .stButton > button[data-baseweb="button"][kind="primary"] {
     background: linear-gradient(180deg, #0a5f87 0%, #084d6e 100%) !important;
@@ -119,17 +134,6 @@ html, body, [data-testid="stAppViewContainer"] {
     border-left: 4px solid #7fbcd4 !important;
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
-}
-
-/* Botão desabilitado */
-[data-testid="stSidebar"] .stButton > button:disabled {
-    background: #e0e0e0 !important;
-    color: #aaaaaa !important;
-    border: 1px solid #cccccc !important;
-    cursor: not-allowed !important;
-    box-shadow: none !important;
-    transform: none !important;
-    text-shadow: none !important;
 }
 
 /* ---------- Cabeçalho principal ---------- */
@@ -158,12 +162,6 @@ label[data-testid="stWidgetLabel"] {
     font-weight: 600 !important;
 }
 
-/* ---------- Tabela de dados ---------- */
-[data-testid="stDataFrame"] {
-    border-radius: 10px !important;
-    overflow: hidden !important;
-}
-
 /* ---------- Chat input ---------- */
 [data-testid="stChatInput"] {
     background-color: #ffffff !important;
@@ -172,23 +170,9 @@ label[data-testid="stWidgetLabel"] {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07) !important;
 }
 
-[data-testid="stChatInput"]:focus-within {
-    border-color: #084d6e !important;
-    box-shadow: 0 0 0 3px rgba(8, 77, 110, 0.22) !important;
-}
-
 [data-testid="stChatInput"] textarea {
     font-size: 0.95rem !important;
     color: #44464a !important;
-}
-
-/* ---------- Mensagens do chat ---------- */
-[data-testid="stChatMessage"] {
-    background-color: #ffffff !important;
-    border-radius: 14px !important;
-    border: 1px solid #ebebeb !important;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05) !important;
-    margin-bottom: 0.5rem !important;
 }
 
 /* ---------- Caixa de boas-vindas ---------- */
@@ -209,46 +193,45 @@ label[data-testid="stWidgetLabel"] {
     justify-content: center;
 }
 
-/* ---------- Badge de notificação ---------- */
-.notif-badge {
-    background-color: #084d6e;
-    color: #ffffff;
-    border-radius: 50%;
-    font-size: 0.68rem;
-    font-weight: 700;
-    padding: 0 6px;
-    margin-left: 4px;
-    vertical-align: middle;
+/* ---------- Divisores ---------- */
+hr {
+    border-color: #e0e0e0 !important;
 }
 
-/* ---------- Histórico de chat ---------- */
-.historico-titulo {
-    font-weight: 700;
-    font-size: 1.02rem;
-    color: #44464a;
-    margin-bottom: 1rem;
+/* ---------- Scrollbar ---------- */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f5f5f5; }
+::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #44464a; }
+
+/* ============================================================
+   ESTILOS DO PAINEL EXECUTIVO (VIEWS)
+   ============================================================ */
+.solid-divider {
+    border: none !important;
+    height: 3px !important;
+    background: linear-gradient(90deg, #084d6e 0%, rgba(8,77,110,0.1) 100%) !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 1.5rem !important;
+    border-radius: 3px;
 }
 
-.historico-item {
-    padding: 0.4rem 0;
-    border-bottom: 1px solid #f0f0f0;
-    color: #44464a;
-    font-size: 0.88rem;
+.chart-card {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 1.5rem;
+    border: 1px solid #e0e6ed;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.03);
+    height: 100%;
 }
 
-.historico-item span {
-    color: #084d6e;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.historico-item span:hover {
-    text-decoration: underline;
-}
-
-/* ---------- Métricas ---------- */
-[data-testid="stMetric"] {
+/* ---------- Métricas (Forçar Cartão Branco Sólido) ---------- */
+[data-testid="stMetric"],
+[data-testid="metric-container"],
+div[data-testid="stMetric"],
+.stMetric {
     background-color: #ffffff !important;
+    background: #ffffff !important;
     border-radius: 12px !important;
     padding: 1rem !important;
     border: 1px solid #e8e8e8 !important;
@@ -264,43 +247,38 @@ label[data-testid="stWidgetLabel"] {
     color: #888 !important;
 }
 
-/* ---------- Divisores ---------- */
-hr {
-    border-color: #e0e0e0 !important;
-}
-
-/* ---------- Scrollbar ---------- */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #f5f5f5; }
-::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #44464a; }
-
-/* ---------- Caption / textos secundários ---------- */
-[data-testid="stSidebar"] .stCaption {
-    color: #aaaaaa !important;
-    font-size: 0.75rem !important;
-    text-align: center !important;
-}
-
 /* ============================================================
-   ESTILOS DO PAINEL EXECUTIVO (VIEWS)
+   SIDEBAR DIREITA (HISTÓRICO DO CHATBOT)
    ============================================================ */
-
-.solid-divider {
-    border: none !important;
-    height: 3px !important;
-    background: linear-gradient(90deg, #084d6e 0%, rgba(8,77,110,0.1) 100%) !important;
-    margin-top: 0.5rem !important;
-    margin-bottom: 1.5rem !important;
-    border-radius: 3px;
+div[data-testid="stVerticalBlock"]:has(.right-sidebar-marker) {
+    position: fixed !important;
+    right: 0 !important;
+    top: 0 !important;
+    width: 300px !important;
+    height: 100vh !important;
+    background-color: #f9f9f9 !important;
+    border-left: 1px solid #e8e8e8 !important;
+    box-shadow: -3px 0 16px rgba(0, 0, 0, 0.07) !important;
+    z-index: 999999 !important;
+    padding: 1.2rem 0.85rem 1rem 0.85rem !important;
+    overflow-y: auto !important;
+    display: block !important;
 }
 
-/* Container de Gráficos (Cartão Branco) */
-.chart-card {
-    background-color: #ffffff;
-    border-radius: 8px;
-    padding: 1.5rem;
-    border: 1px solid #e0e6ed;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.03);
-    height: 100%;
+[data-testid="stMainBlockContainer"]:has(.right-sidebar-marker) {
+    padding-right: 360px !important;
+}
+/* ── Logo CITi — fixada no canto inferior esquerdo da sidebar ── */
+.logo-citi-wrapper {
+    position: fixed !important;
+    bottom: 1.2rem !important;
+    left: 0.7rem !important;
+    z-index: 999999 !important;
+    width: 36px !important;
+}
+
+.logo-citi-wrapper img {
+    width: 36px !important;
+    height: auto !important;
+    display: block !important;
 }
