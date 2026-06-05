@@ -1,7 +1,6 @@
 [server]
 port = 8501
 address = "0.0.0.0"
-baseUrlPath = "meu-dashboard"
 [theme]
 base="light"
 primaryColor="#1E2B4D"
