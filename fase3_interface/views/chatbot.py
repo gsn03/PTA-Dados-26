@@ -71,7 +71,7 @@ def _deletar_conversa(conv_id: str):
 # ── Comunicação com a API ─────────────────────────────────────────────────────
 def enviar_mensagem_api(mensagem: str, historico: list) -> str:
     """Envia a pergunta ao endpoint RAG/Langchain e retorna a resposta."""
-    link_final = "http://127.0.0.1:8000/ia/chat"
+    link_final = f"{API_URL}/ia/chat"
     payload    = {"pergunta": mensagem, "historico": historico}
 
     try:
