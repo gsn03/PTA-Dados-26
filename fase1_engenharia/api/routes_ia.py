@@ -249,7 +249,7 @@ def obter_carteira_advogados(db: Session = Depends(get_db)):
             func.upper(Processo.status).in_(status_ativos),
             Processo.prazo_proximo != None,
             Processo.prazo_proximo >= date.today()
-        ).order_by(asc(Processo.prazo_proximo)).limit(5).all()
+        ).order_by(asc(Processo.prazo_proximo)).limit(20).all()
 
         lista_prazos = []
         # Loop clássico para buscar o nome do cliente (Mantendo o seu padrão de arquitetura)
