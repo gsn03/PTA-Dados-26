@@ -1,23 +1,24 @@
 /* ============================================================
    CAVALCANTI & MELO — Global Style
-   Paleta: Cinza escuro #44464a | Amarelo-dourado #ffcc00 | Fundo #f5f5f5
+   Paleta: Cinza escuro #44464a | Azul petróleo #084d6e | Fundo #f5f5f5
    ============================================================ */
 
 /* ---------- Importação de fonte ---------- */
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&display=swap');
 
 /* ---------- Reset & Fundo geral ---------- */
 html, body, [data-testid="stAppViewContainer"] {
     background-color: #f5f5f5 !important;
-    font-family: 'DM Sans', sans-serif !important;
+    font-family: 'Barlow', sans-serif !important;
 }
 
 [data-testid="stMain"] {
     background-color: #f5f5f5 !important;
 }
 
+/* CORREÇÃO AQUI: Aumentado de 1.2rem para 4.5rem para afastar o conteúdo da barra superior do Streamlit */
 [data-testid="stMainBlockContainer"] {
-    padding-top: 1.2rem !important;
+    padding-top: 4.5rem !important;
 }
 
 /* ---------- Barra lateral ---------- */
@@ -43,56 +44,92 @@ html, body, [data-testid="stAppViewContainer"] {
     letter-spacing: 0.01em !important;
 }
 
-/* ---------- Botões principais da sidebar (pills) ---------- */
+/* ---------- Botões principais da sidebar (Estilo Corporativo/Sério) ---------- */
 [data-testid="stSidebar"] .stButton > button {
-    background-color: #44464a !important;
+    background: linear-gradient(180deg, #575a5e 0%, #44464a 100%) !important;
     color: #ffffff !important;
-    border: none !important;
-    border-radius: 50px !important;
-    padding: 0.55rem 1.1rem !important;
+    font-family: 'Barlow', sans-serif !important;
+    border: 1px solid #333538 !important;
+    border-radius: 6px !important;
+    padding: 0.6rem 1.1rem !important;
     font-size: 0.92rem !important;
     font-weight: 600 !important;
     width: 100% !important;
     text-align: left !important;
-    transition: background-color 0.18s ease, color 0.18s ease, transform 0.12s ease !important;
+    transition: all 0.2s ease !important;
     cursor: pointer !important;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.13) !important;
-    margin-bottom: 0.1rem !important;
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+    margin-bottom: 0.2rem !important;
     letter-spacing: 0.01em !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
 }
 
-/* Hover: fundo amarelo-dourado, texto cinza escuro */
+/* Hover: Efeito mais claro e subida em Y */
 [data-testid="stSidebar"] .stButton > button:hover {
-    background-color: #ffcc00 !important;
-    color: #44464a !important;
-    transform: translateX(3px) !important;
-    box-shadow: 0 3px 10px rgba(255, 204, 0, 0.25) !important;
+    background: linear-gradient(180deg, #0a5f87 0%, #084d6e 100%) !important;
+    border-color: #05364d !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(8, 77, 110, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
 }
 
-/* Botão ativo/selecionado (primary): amarelo-dourado */
+/* Botão ativo/selecionado (primary): Fica cravado no Azul Petróleo com sombra interior marcada */
 [data-testid="stSidebar"] .stButton > button[kind="primary"],
 [data-testid="stSidebar"] .stButton > button[data-baseweb="button"][kind="primary"] {
-    background-color: #ffcc00 !important;
-    color: #44464a !important;
-    box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.28) !important;
+    background: linear-gradient(180deg, #09587d 0%, #063e59 100%) !important;
+    color: #ffffff !important;
+    border: 1px solid #042738 !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 1px rgba(255,255,255,0.1) !important;
 }
 
-/* Sub-botões de Gráficos — aparência ligeiramente menor */
-[data-testid="stSidebar"] .stButton > button[key^="btn_prazos"],
-[data-testid="stSidebar"] .stButton > button[key^="btn_status"],
-[data-testid="stSidebar"] .stButton > button[key^="btn_inadimplencia"] {
+/* ── Sub-botões de Gráficos (Dentro do Container) ──────────────────────────── */
+
+/* Estilo Base Sub-botão: Fundo texturizado claro, aspeto matte */
+[data-testid="stSidebar"] [data-testid="stVerticalBlock"] [data-testid="stVerticalBlock"] .stButton > button {
+    background: linear-gradient(180deg, #f7f9fa 0%, #e6ecef 100%) !important;
+    color: #2b3036 !important;
+    font-family: 'Barlow', sans-serif !important;
+    border: 1px solid #d1dadd !important;
+    border-left: 4px solid #084d6e !important;
+    border-radius: 4px 6px 6px 4px !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
     font-size: 0.82rem !important;
-    padding: 0.42rem 0.9rem !important;
-    background-color: #5c5e63 !important;
+    font-weight: 600 !important;
+    padding: 0.4rem 0.85rem 0.4rem 0.85rem !important;
+    margin-left: 0.7rem !important;
+    width: calc(100% - 0.7rem) !important;
+    letter-spacing: 0 !important;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Hover no Sub-botão */
+[data-testid="stSidebar"] [data-testid="stVerticalBlock"] [data-testid="stVerticalBlock"] .stButton > button:hover {
+    background: linear-gradient(180deg, #ffffff 0%, #eff4f7 100%) !important;
+    color: #084d6e !important;
+    transform: translateX(2px) !important;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+    border-color: #c2d1d9 !important;
+}
+
+/* Sub-botão ativo/selecionado (primary) */
+[data-testid="stSidebar"] [data-testid="stVerticalBlock"] [data-testid="stVerticalBlock"] .stButton > button[kind="primary"],
+[data-testid="stSidebar"] [data-testid="stVerticalBlock"] [data-testid="stVerticalBlock"] .stButton > button[data-baseweb="button"][kind="primary"] {
+    background: linear-gradient(180deg, #0a5f87 0%, #084d6e 100%) !important;
+    color: #ffffff !important;
+    border: 1px solid #05364d !important;
+    border-left: 4px solid #7fbcd4 !important;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
 }
 
 /* Botão desabilitado */
 [data-testid="stSidebar"] .stButton > button:disabled {
-    background-color: #d0d0d0 !important;
+    background: #e0e0e0 !important;
     color: #aaaaaa !important;
+    border: 1px solid #cccccc !important;
     cursor: not-allowed !important;
     box-shadow: none !important;
     transform: none !important;
+    text-shadow: none !important;
 }
 
 /* ---------- Cabeçalho principal ---------- */
@@ -103,12 +140,12 @@ h1, h2 {
 
 /* ---------- Slider (prazos) ---------- */
 [data-testid="stSlider"] [role="slider"] {
-    background-color: #ffcc00 !important;
+    background-color: #084d6e !important;
     border: 2px solid #44464a !important;
 }
 
 [data-testid="stSlider"] > div > div > div > div {
-    background-color: #ffcc00 !important;
+    background-color: #084d6e !important;
 }
 
 /* ---------- Textos e labels ---------- */
@@ -136,8 +173,8 @@ label[data-testid="stWidgetLabel"] {
 }
 
 [data-testid="stChatInput"]:focus-within {
-    border-color: #ffcc00 !important;
-    box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.22) !important;
+    border-color: #084d6e !important;
+    box-shadow: 0 0 0 3px rgba(8, 77, 110, 0.22) !important;
 }
 
 [data-testid="stChatInput"] textarea {
@@ -174,8 +211,8 @@ label[data-testid="stWidgetLabel"] {
 
 /* ---------- Badge de notificação ---------- */
 .notif-badge {
-    background-color: #ffcc00;
-    color: #44464a;
+    background-color: #084d6e;
+    color: #ffffff;
     border-radius: 50%;
     font-size: 0.68rem;
     font-weight: 700;
@@ -200,7 +237,7 @@ label[data-testid="stWidgetLabel"] {
 }
 
 .historico-item span {
-    color: #ffcc00;
+    color: #084d6e;
     font-weight: 600;
     cursor: pointer;
 }
@@ -243,4 +280,27 @@ hr {
     color: #aaaaaa !important;
     font-size: 0.75rem !important;
     text-align: center !important;
+}
+
+/* ============================================================
+   ESTILOS DO PAINEL EXECUTIVO (VIEWS)
+   ============================================================ */
+
+.solid-divider {
+    border: none !important;
+    height: 3px !important;
+    background: linear-gradient(90deg, #084d6e 0%, rgba(8,77,110,0.1) 100%) !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 1.5rem !important;
+    border-radius: 3px;
+}
+
+/* Container de Gráficos (Cartão Branco) */
+.chart-card {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 1.5rem;
+    border: 1px solid #e0e6ed;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.03);
+    height: 100%;
 }

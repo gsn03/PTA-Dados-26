@@ -2,7 +2,7 @@
 views/carteira_advogados.py — Carteira por Advogado
 Página única que exibe a carga de trabalho de um advogado selecionado,
 apresentando totais e a tabela dos 5 processos mais urgentes.
-Cores: cinza #44464a | amarelo #ffcc00
+Cores: cinza #44464a | azul petróleo #084d6e
 """
 
 import os
@@ -20,7 +20,7 @@ API_URL = os.getenv("API_KEY", "http://127.0.0.1:8000")
 
 # ── Paleta ───────────────────────────────────────────────────────────────────
 COR_PRIMARIA   = "#44464a"   # cinza escuro
-COR_AMARELO    = "#ffcc00"   # amarelo
+COR_AMARELO    = "#084d6e"   # amarelo
 COR_FUNDO      = "#f5f5f5"
 COR_GRADE      = "#ebebeb"
 
@@ -76,22 +76,6 @@ def _tabela_prazos(prazos: list):
 
 # ── View principal ────────────────────────────────────────────────────────────
 def renderizar_tela():
-    # Ícone de balança do título (Mesmo padrão do prazos_urgentes)
-    balanca_path = Path(__file__).resolve().parent.parent / "assets" / "balanca.png"
-
-    col_t1, col_t2, col_t3 = st.columns([3, 1, 3])
-    with col_t2:
-        if balanca_path.exists():
-            st.image(str(balanca_path), width=40)
-
-    st.markdown(
-        f"<h2 style='text-align:center; color:{COR_PRIMARIA}; margin-top:-2rem;'>"
-        "Carteira por Advogado</h2>",
-        unsafe_allow_html=True,
-    )
-
-    st.markdown("---")
-
     # ── Carregar dados reais da API ──────────────────────────────────────────
     with st.spinner("A mapear a carteira da equipa no banco de dados..."):
         dados_carteira = buscar_dados_carteira()
@@ -106,49 +90,39 @@ def renderizar_tela():
     # ── Seletor de Advogado ──────────────────────────────────────────────────
     lista_nomes = [adv.get("nome_advogado") for adv in dados_carteira]
     
-    st.markdown(
-        f"<p style='color:{COR_PRIMARIA}; font-weight:600;'>"
-        "Selecione o Advogado Responsável:</p>",
-        unsafe_allow_html=True,
-    )
-    
-    nome_selecionado = st.selectbox(
-        label="selecionar_advogado", 
-        options=lista_nomes, 
-        label_visibility="collapsed"
-    )
+    # ── TOPO: Filtro e Métricas (Lado a Lado) ────────────────────────────────
+    col_filtro, col_m1, col_m2, col_m3 = st.columns([2, 1, 1, 1])
+
+    with col_filtro:
+        st.markdown(
+            f"<p style='color:{COR_PRIMARIA}; font-weight:600; margin-top:0.5rem; margin-bottom:0.5rem;'>"
+            "Selecione o Advogado Responsável:</p>",
+            unsafe_allow_html=True,
+        )
+        nome_selecionado = st.selectbox(
+            label="selecionar_advogado", 
+            options=lista_nomes, 
+            label_visibility="collapsed"
+        )
 
     advogado_filtrado = next((adv for adv in dados_carteira if adv["nome_advogado"] == nome_selecionado), None)
 
-    # ── Resumo da Carteira (Card Dinâmico) ───────────────────────────────────
+    # ── Resumo da Carteira (Cards Dinâmicos) ─────────────────────────────────
     if advogado_filtrado:
-        st.markdown("<br>", unsafe_allow_html=True)
-        
         tot_trabalhar = advogado_filtrado.get('total_trabalhar', 0)
         ativos = advogado_filtrado.get('ativos', 0)
         recurso = advogado_filtrado.get('em_recurso', 0)
         
-        # Formatando os números com o estilo visual do projeto
-        st.markdown(
-            f"<h3 style='color:{COR_PRIMARIA}; margin-bottom: 0.5rem;'>"
-            f"Total a Trabalhar: <span style='color:{COR_AMARELO};'>{tot_trabalhar} processos</span></h3>",
-            unsafe_allow_html=True
-        )
-        st.markdown(
-            f"<p style='font-size:1.05rem; color:{COR_PRIMARIA}; margin-left: 1rem; margin-bottom: 0;'>"
-            f"↳ <b>{ativos}</b> Ativos</p>",
-            unsafe_allow_html=True
-        )
-        st.markdown(
-            f"<p style='font-size:1.05rem; color:{COR_PRIMARIA}; margin-left: 1rem; margin-bottom: 1.5rem;'>"
-            f"↳ <b>{recurso}</b> Em Recurso</p>",
-            unsafe_allow_html=True
-        )
+        with col_m1:
+            st.metric(label="Total a Trabalhar", value=str(tot_trabalhar))
+        with col_m2:
+            st.metric(label="Ativos", value=str(ativos))
+        with col_m3:
+            st.metric(label="Em Recurso", value=str(recurso))
 
-        # ── Tabela detalhada ──────────────────────────────────────────────────────
+        # ── Tabela detalhada ─────────────────────────────────────────────────
+        st.markdown("<br>", unsafe_allow_html=True)
         _tabela_prazos(advogado_filtrado.get("proximos_prazos", []))
-        
-        st.markdown("---")
 
 if __name__ == "__main__":
     renderizar_tela()

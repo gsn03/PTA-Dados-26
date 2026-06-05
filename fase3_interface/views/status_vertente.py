@@ -1,6 +1,6 @@
 """
 views/status_vertente.py — Status dos Processos por Vertente
-Paleta da interface: cinza #44464a | amarelo #ffcc00
+Paleta da interface: cinza #44464a | azul petróleo #084d6e
 """
 
 import os
@@ -18,7 +18,7 @@ API_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
 
 # ── Paleta ────────────────────────────────────────────────────────────────────
 COR_PRIMARIA   = "#44464a"
-COR_AMARELO    = "#ffcc00"
+COR_AMARELO    = "#084d6e"
 COR_FUNDO_PLOT = "#ffffff"
 COR_GRADE      = "#ebebeb"
 
@@ -28,7 +28,7 @@ PALETA_CINZAS = [
     "#6b6d72",   # cinza médio
     "#9a9b9f",   # cinza claro
     "#c4c5c8",   # cinza muito claro
-    "#ffcc00",   # amarelo (destaque extra)
+    "#084d6e",   # azul petróleo (destaque extra)
 ]
 
 
@@ -49,19 +49,7 @@ def buscar_dados_status_vertente():
 
 
 def renderizar_tela():
-    st.markdown(
-        f"<h2 style='text-align:center; color:{COR_PRIMARIA};'>"
-        "Status dos Processos por Vertente ⚖️</h2>",
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        "<p style='text-align:center; color:#777;'>"
-        "Distribuição do volume de processos (Ativos, Encerrados, etc.) "
-        "divididos por área de atuação.</p>",
-        unsafe_allow_html=True,
-    )
-    st.markdown("---")
-
+    # ── Busca e Tratamento de Dados ───────────────────────────────────────────
     with st.spinner("Buscando dados no banco..."):
         dados = buscar_dados_status_vertente()
 
@@ -79,48 +67,50 @@ def renderizar_tela():
     df["vertente"] = df["vertente"].replace({"CÍVEL": "CIVIL"})
     df = df.groupby(["vertente", "status"], as_index=False)["quantidade"].sum()
 
-    # ── Filtros ───────────────────────────────────────────────────────────────
-    st.markdown(
-        f"<p style='color:{COR_PRIMARIA}; font-weight:600; font-size:0.95rem;'>"
-        "🔍 Filtros de Análise</p>",
-        unsafe_allow_html=True,
-    )
-    col_f1, col_f2 = st.columns(2)
-
     opcoes_vertentes = df["vertente"].unique().tolist()
     opcoes_status    = df["status"].unique().tolist()
 
-    with col_f1:
-        vertentes_selecionadas = st.multiselect(
-            "Área(s) de Atuação:",
-            options=opcoes_vertentes,
-            default=opcoes_vertentes,
+    # ── TOPO: Filtros e Métrica (Lado a Lado - Alinhamento Corrigido) ─────────
+    col_filtro, col_metrica = st.columns([2, 1])
+
+    with col_filtro:
+        st.markdown(
+            f"<p style='color:{COR_PRIMARIA}; font-weight:600; margin-top:0.5rem; margin-bottom:0.5rem;'>"
+            "🔍 Filtros de Análise:</p>",
+            unsafe_allow_html=True,
         )
-    with col_f2:
-        status_selecionados = st.multiselect(
-            "Status:",
-            options=opcoes_status,
-            default=opcoes_status,
-        )
+        
+        cf1, cf2 = st.columns(2)
+        with cf1:
+            vertentes_selecionadas = st.multiselect(
+                "Área(s) de Atuação:",
+                options=opcoes_vertentes,
+                default=opcoes_vertentes,
+                label_visibility="collapsed"
+            )
+        with cf2:
+            status_selecionados = st.multiselect(
+                "Status:",
+                options=opcoes_status,
+                default=opcoes_status,
+                label_visibility="collapsed"
+            )
 
     df_filtrado = df[
         (df["vertente"].isin(vertentes_selecionadas)) &
         (df["status"].isin(status_selecionados))
     ]
 
+    with col_metrica:
+        st.metric(label="Total de Cruzamentos Encontrados", value=str(len(df_filtrado)))
+
     if df_filtrado.empty:
         st.info("Nenhum dado encontrado para os filtros selecionados.")
         return
 
-    st.markdown("---")
-    st.markdown(
-        f"<p style='color:{COR_PRIMARIA}; font-weight:700;'>"
-        f"Total de cruzamentos encontrados: "
-        f"<span style='color:{COR_AMARELO};'>{len(df_filtrado)}</span></p>",
-        unsafe_allow_html=True,
-    )
+    st.markdown("<br>", unsafe_allow_html=True)
 
-    # ── Gráfico de barras agrupadas na paleta cinza/amarelo ───────────────────
+    # ── CORPO: Gráfico Principal ─────────────────────────────────────────────
     vertentes = df_filtrado["vertente"].unique().tolist()
     status_list = df_filtrado["status"].unique().tolist()
 
@@ -171,11 +161,13 @@ def renderizar_tela():
         height=380,
     )
 
+    st.markdown("<div class='chart-card'>", unsafe_allow_html=True)
     st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False})
+    st.markdown("</div>", unsafe_allow_html=True)
 
     # ── Tabela de detalhamento ────────────────────────────────────────────────
     st.markdown(
-        f"<p style='font-weight:700; color:{COR_AMARELO}; font-size:1rem;'>"
+        f"<p style='font-weight:700; color:{COR_AMARELO}; font-size:1rem; margin-top:1.5rem;'>"
         "Detalhamento</p>",
         unsafe_allow_html=True,
     )

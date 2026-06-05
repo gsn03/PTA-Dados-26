@@ -3,6 +3,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, func, case, asc
 from datetime import date, timedelta
 import sys
+import os
+from pydantic import BaseModel
+from typing import List, Dict, Any
 from pathlib import Path
 
 # Ajuste de caminho idêntico ao das suas outras rotas
@@ -24,8 +27,84 @@ def get_db():
     finally:
         db.close()
 
-#Histórico de Processo (Resolve o problema dos números duplicados)
+    
+# =====================================================================
+# MOTOR RAG E LLM
+# =====================================================================
 
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import PromptTemplate
+from banco_vetorial import buscar_contexto_semantico
+
+from dotenv import load_dotenv
+from pathlib import Path
+pasta_raiz = Path(__file__).resolve().parent.parent.parent
+load_dotenv(pasta_raiz / ".env", override=True)
+
+# Inicializa o cérebro do Gemini (fora da rota para não recriar a cada chamada)
+llm = ChatGoogleGenerativeAI(
+    model="gemini-2.5-flash",
+    temperature=0.1, # Quase zero de alucinação
+    google_api_key=os.getenv("GOOGLE_API_KEY")
+)
+
+# Estrutura dos dados que o Streamlit envia
+class RequisicaoChat(BaseModel):
+    pergunta: str
+    historico: List[Dict[str, Any]] = []
+
+
+@router.post("/chat")
+def responder_chat(requisicao: RequisicaoChat):
+    pergunta_usuario = requisicao.pergunta
+    
+    # 1. RECUPERAÇÃO DE CONTEXTO (RAG)
+    # Vai no pgvector buscar os 4 trechos de PDFs mais parecidos com a pergunta
+    contexto_recuperado = buscar_contexto_semantico(pergunta=pergunta_usuario, limite=4)
+    
+    if not contexto_recuperado.strip():
+        contexto_recuperado = "Nenhum documento relevante encontrado."
+
+    # 2. ENGENHARIA DE PROMPT
+    prompt_template = PromptTemplate(
+        input_variables=["contexto", "pergunta"],
+        template="""Você é o 'Dados', um assistente jurídico sênior do escritório Cavalcante & Melo.
+        Sua missão é responder à pergunta do usuário baseando-se ÚNICA E EXCLUSIVAMENTE nos documentos fornecidos abaixo.
+        
+        REGRAS:
+        1. Se a resposta não estiver nos documentos, diga explicitamente: "Não encontrei essa informação nos documentos."
+        2. Nunca invente dados, prazos, valores ou nomes.
+        3. Cite o [Arquivo: nome_do_pdf] de onde você tirou a informação.
+
+        DOCUMENTOS RECUPERADOS:
+        {contexto}
+
+        PERGUNTA DO USUÁRIO:
+        {pergunta}
+
+        SUA RESPOSTA DIRETA:"""
+    )
+    
+    prompt_formatado = prompt_template.format(
+        contexto=contexto_recuperado, 
+        pergunta=pergunta_usuario
+    )
+
+    contexto_recuperado = buscar_contexto_semantico(pergunta=pergunta_usuario, limite=4)
+    
+    # ADICIONE ESTA LINHA AQUI PARA VER NO TERMINAL:
+    print(f"\n--- CONTEXTO QUE SAIU DO BANCO ---\n{contexto_recuperado}---\n")
+
+    # 3. GERAÇÃO DA RESPOSTA
+    try:
+        resposta_ia = llm.invoke(prompt_formatado)
+        texto_final = resposta_ia.content
+    except Exception as e:
+        texto_final = f"Ocorreu um erro no processamento da IA: {str(e)}"
+
+    return {"resposta": texto_final}
+
+#Histórico de Processo (Resolve o problema dos números duplicados)
 @router.get("/processo_historico")
 def buscar_historico_processo_ia(numero_processo: str, nome_cliente: str, db: Session = Depends(get_db)):
     

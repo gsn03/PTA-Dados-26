@@ -1,6 +1,6 @@
 """
-app.py — Cavalcanti & Melo | Interface Principal
-Integra todas as views: chatbot, prazos_urgentes, status_vertente, view_inadimplencia, carteira_advogados, notificador_prazos
+app.py — Cavalcante & Melo | Interface Principal
+Integra todas as views: chatbot, prazos_urgentes, status_vertente, view_inadimplencia, notificador_prazos
 """
 
 import streamlit as st
@@ -8,7 +8,7 @@ from pathlib import Path
 
 # ── Configuração da página ──────────────────────────────────────────────────
 st.set_page_config(
-    page_title="Cavalcanti & Melo",
+    page_title="Cavalcante & Melo",
     page_icon="⚖️",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -32,18 +32,16 @@ if "mostrar_historico" not in st.session_state:
 
 # ── Sidebar ─────────────────────────────────────────────────────────────────
 with st.sidebar:
-    # Ícone de engrenagem + título "Serviços"
-    engrenagem_path = Path(__file__).parent / "assets" / "engrenagem.png"
-    col_icon, col_title = st.columns([1, 3])
-    with col_icon:
-        if engrenagem_path.exists():
-            st.image(str(engrenagem_path), width=28)
-        else:
-            st.markdown("⚙️")
-    with col_title:
+    # ── Logo da Empresa ──────────────────────────────────────────────────────
+    logo_cm_path = Path(__file__).parent / "assets" / "logo_empresa.jpeg"
+    if logo_cm_path.exists():
+        # Exibe a logo ocupando a largura ideal da sidebar
+        st.image(str(logo_cm_path), use_container_width=True)
+    else:
+        # Fallback caso a imagem não seja encontrada na pasta assets
         st.markdown(
-            "<h3 style='margin:0; padding:0; line-height:2;'>Serviços</h3>",
-            unsafe_allow_html=True,
+            "<h3 style='text-align:center; color:#44464a;'>Cavalcante & Melo</h3>", 
+            unsafe_allow_html=True
         )
 
     st.markdown("<div style='margin-bottom:1.2rem;'></div>", unsafe_allow_html=True)
@@ -78,68 +76,62 @@ with st.sidebar:
 
     # Sub-botões de Gráficos — visíveis apenas quando a seção está ativa
     if graficos_ativo:
-        st.markdown(
-            "<div style='margin-left:1rem; margin-top:0.3rem;'>",
-            unsafe_allow_html=True,
-        )
+        with st.container():
+            prazos_ativo = st.session_state.pagina_atual == "prazos_urgentes"
+            if st.button(
+                "⏰  Prazos Urgentes",
+                use_container_width=True,
+                key="btn_prazos",
+                type="primary" if prazos_ativo else "secondary",
+            ):
+                st.session_state.pagina_atual = "prazos_urgentes"
+                st.rerun()
 
-        prazos_ativo = st.session_state.pagina_atual == "prazos_urgentes"
-        if st.button(
-            "⏰  Prazos Urgentes",
-            use_container_width=True,
-            key="btn_prazos",
-            type="primary" if prazos_ativo else "secondary",
-        ):
-            st.session_state.pagina_atual = "prazos_urgentes"
-            st.rerun()
+            status_ativo = st.session_state.pagina_atual == "status_vertente"
+            if st.button(
+                "📋  Status Vertente",
+                use_container_width=True,
+                key="btn_status",
+                type="primary" if status_ativo else "secondary",
+            ):
+                st.session_state.pagina_atual = "status_vertente"
+                st.rerun()
 
-        status_ativo = st.session_state.pagina_atual == "status_vertente"
-        if st.button(
-            "📋  Status Vertente",
-            use_container_width=True,
-            key="btn_status",
-            type="primary" if status_ativo else "secondary",
-        ):
-            st.session_state.pagina_atual = "status_vertente"
-            st.rerun()
+            inadimplencia_ativo = st.session_state.pagina_atual == "inadimplencia"
+            if st.button(
+                "📉  Inadimplência",
+                use_container_width=True,
+                key="btn_inadimplencia",
+                type="primary" if inadimplencia_ativo else "secondary",
+            ):
+                st.session_state.pagina_atual = "inadimplencia"
+                st.rerun()
 
-        inadimplencia_ativo = st.session_state.pagina_atual == "inadimplencia"
-        if st.button(
-            "📉  Inadimplência",
-            use_container_width=True,
-            key="btn_inadimplencia",
-            type="primary" if inadimplencia_ativo else "secondary",
-        ):
-            st.session_state.pagina_atual = "inadimplencia"
-            st.rerun()
-        
-        carteira_ativo = st.session_state.pagina_atual == "carteira_advogados"
-        if st.button(
-            "💼  Carteira Advogados",
-            use_container_width=True,
-            key="btn_carteira",
-            type="primary" if carteira_ativo else "secondary",
-        ):
-            st.session_state.pagina_atual = "carteira_advogados"
-            st.rerun()
-
-        st.markdown("</div>", unsafe_allow_html=True)
+            carteira_ativo = st.session_state.pagina_atual == "carteira_advogados"
+            if st.button(
+                "💼  Carteira Advogados",
+                use_container_width=True,
+                key="btn_carteira",
+                type="primary" if carteira_ativo else "secondary",
+            ):
+                st.session_state.pagina_atual = "carteira_advogados"
+                st.rerun()
 
     st.markdown("<div style='margin-bottom:0.6rem;'></div>", unsafe_allow_html=True)
 
-    # ── Botão Notificações ───────────────────────────────────────────────────
-    notificacoes_ativo = st.session_state.pagina_atual == "notificador_prazos"
+    # ── Botão Notificador de Prazos (Nova Hierarquia Principal) ──────────────
+    notificador_ativo = st.session_state.pagina_atual == "notificador_prazos"
     if st.button(
-        "🔔  Notificações prazos",
+        "🔔  Notificador de Prazos",
         use_container_width=True,
-        key="btn_notif",
-        type="primary" if notificacoes_ativo else "secondary",
+        key="btn_notificador",
+        type="primary" if notificador_ativo else "secondary",
     ):
         st.session_state.pagina_atual = "notificador_prazos"
         st.rerun()
-    
 
-    # ── Logo CITi no rodapé — afastada, próxima da margem inferior ───────────
+
+    # ── Logo CITi no rodapé ──────────────────────────────────────────────────
     st.markdown(
         "<div style='position:fixed; bottom:1.2rem; left:0.8rem;'>",
         unsafe_allow_html=True,
@@ -153,8 +145,8 @@ with st.sidebar:
 pagina = st.session_state.pagina_atual
 
 if pagina == "chatbot":
-    from views.chatbot import render
-    render()
+    from views.chatbot import renderizar_tela
+    renderizar_tela()
 
 elif pagina == "prazos_urgentes":
     from views.prazos_urgentes import render

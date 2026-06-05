@@ -1,6 +1,6 @@
 """
 views/view_inadimplencia.py — Risco de Carteira e Inadimplência
-Paleta da interface: cinza #44464a | amarelo #ffcc00
+Paleta da interface: cinza #44464a | azul petróleo #084d6e
 """
 
 import os
@@ -19,7 +19,7 @@ API_URL = os.getenv("API_KEY", "http://127.0.0.1:8000")
 
 # ── Paleta ────────────────────────────────────────────────────────────────────
 COR_PRIMARIA   = "#44464a"
-COR_AMARELO    = "#ffcc00"
+COR_AMARELO    = "#084d6e"
 COR_FUNDO_PLOT = "#ffffff"
 COR_GRADE      = "#ebebeb"
 
@@ -28,7 +28,7 @@ MAPA_CORES = {
     "1 a 30 dias":  "#9a9b9f",   # cinza claro — menor risco
     "31 a 60 dias": "#6b6d72",   # cinza médio
     "61 a 90 dias": "#44464a",   # cinza escuro
-    "> 90 dias":    "#ffcc00",   # amarelo — alerta máximo
+    "> 90 dias":    "#6f0d0d",   # vermelho — alerta máximo
 }
 
 
@@ -51,18 +51,7 @@ def buscar_dados_inadimplencia():
 
 
 def renderizar_tela():
-    st.markdown(
-        f"<h2 style='text-align:center; color:{COR_PRIMARIA};'>"
-        "Risco de Carteira e Inadimplência 📉</h2>",
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        "<p style='text-align:center; color:#777;'>"
-        "Valor total de honorários em atraso, segmentado pela idade da dívida.</p>",
-        unsafe_allow_html=True,
-    )
-    st.markdown("---")
-
+    # ── Busca e Tratamento de Dados ───────────────────────────────────────────
     with st.spinner("Processando dados financeiros..."):
         dados_brutos = buscar_dados_inadimplencia()
 
@@ -114,14 +103,28 @@ def renderizar_tela():
 
     total_devido = df_agrupado["valor_total"].sum()
     total_fmt = f"R$ {total_devido:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    st.markdown(
-        f"<p style='font-weight:700; font-size:1.1rem; color:{COR_PRIMARIA};'>"
-        f"Total em Atraso: <span style='color:{COR_AMARELO};'>{total_fmt}</span></p>",
-        unsafe_allow_html=True,
-    )
 
-    # ── Gráfico de barras (aging) na paleta cinza/amarelo ─────────────────────
-    # Garantir a ordem das faixas mesmo que nem todas existam
+    # ── TOPO: Contexto e Métrica (Lado a Lado - Ajustado sem quebras) ─────────
+    col_texto, col_metrica = st.columns([2, 1])
+
+    with col_texto:
+        st.markdown(
+            f"<p style='color:{COR_PRIMARIA}; font-weight:600; margin-top:0.5rem; margin-bottom:0.5rem;'>"
+            "Risco de Carteira e Inadimplência:</p>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            "<p style='color:#777; margin-bottom:0;'>"
+            "Valor total de honorários em atraso, segmentado pela idade da dívida.</p>",
+            unsafe_allow_html=True,
+        )
+
+    with col_metrica:
+        st.metric(label="Total em Atraso", value=total_fmt)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ── CORPO: Gráfico Principal ─────────────────────────────────────────────
     df_plot = (
         pd.DataFrame({"faixa": ordem_faixas})
         .merge(df_agrupado, on="faixa", how="left")
@@ -164,13 +167,13 @@ def renderizar_tela():
         showlegend=False,
     )
 
+    st.markdown("<div class='chart-card'>", unsafe_allow_html=True)
     st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False})
-
-    st.markdown("---")
+    st.markdown("</div>", unsafe_allow_html=True)
 
     # ── Tabela detalhada ──────────────────────────────────────────────────────
     st.markdown(
-        f"<p style='font-weight:700; color:{COR_AMARELO}; font-size:1rem;'>"
+        f"<p style='font-weight:700; color:{COR_AMARELO}; font-size:1rem; margin-top:1.5rem;'>"
         "Detalhamento por Cliente</p>",
         unsafe_allow_html=True,
     )
@@ -194,3 +197,7 @@ def renderizar_tela():
         hide_index=True,
         use_container_width=True,
     )
+
+
+if __name__ == "__main__":
+    renderizar_tela()
