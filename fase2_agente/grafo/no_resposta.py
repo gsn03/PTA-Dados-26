@@ -13,7 +13,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
-ia_resposta = ChatGoogleGenerativeAI(model=os.getenv("LLM_MODEL", "gemini-2.5-flash"), temperature=0.1, api_key=os.getenv("GOOGLE_API_KEY"))
+llm_geracao = ChatGoogleGenerativeAI(model=os.getenv("LLM_MODEL", "gemini-2.5-flash"), temperature=0.1, api_key=os.getenv("GOOGLE_API_KEY"))
 
 prompt_resposta = ChatPromptTemplate.from_messages([
     ("system", """Você é o Redator Jurídico Final do escritório.
