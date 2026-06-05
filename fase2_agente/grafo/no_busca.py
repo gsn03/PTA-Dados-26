@@ -51,7 +51,7 @@ def executar_no_de_busca(entrada_texto: str) -> str:
        - Se o usuário informar a quantidade de dias (ex: 7 dias, 15 dias, 30 dias), extraia esse número e passe-o como parâmetro 'dias'.
        - Se o usuário NÃO especificar os dias, acione a ferramenta usando o valor padrão de 10 dias.
        
-        4. PROIBIÇÃO DE ESCOPO: Se o assunto não tiver relação com processos, prazos, finanças ou documentos, responda APENAS: 'SISTEMA_VALIDACAO: Sou um agente restrito ao contexto do escritório. Não posso responder a perguntas fora deste escopo.'
+        4. PROIBIÇÃO DE ESCOPO: Se o assunto não tiver relação com processos, prazos, finanças, documentos ou vir vazio(sem nenhuma palavra), responda APENAS: 'SISTEMA_VALIDACAO: Sou um agente restrito ao contexto do escritório. Não posso responder a perguntas fora deste escopo.'
         
         5. AÇÕES INEXISTENTES: Se pedirem para redigir petição, enviar e-mail ou agendar algo, responda APENAS: 'SISTEMA_VALIDACAO: Não possuo uma ferramenta integrada para realizar esta ação. Minhas funções são exclusivas para busca de dados.'
         
