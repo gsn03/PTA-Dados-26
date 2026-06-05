@@ -209,7 +209,7 @@ pagina = st.session_state.pagina_atual
 
 if pagina == "chatbot":
     from views.chatbot import renderizar_tela
-    renderizar_tela()                          
+    renderizar_tela()
 
 elif pagina == "prazos_urgentes":
     from views.prazos_urgentes import render

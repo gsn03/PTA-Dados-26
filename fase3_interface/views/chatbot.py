@@ -70,11 +70,16 @@ def _deletar_conversa(conv_id: str):
 
 # ── Comunicação com a API ─────────────────────────────────────────────────────
 def enviar_mensagem_api(mensagem: str, historico: list) -> str:
-    url_limpa  = API_URL.rstrip("/")
-    link_final = f"{url_limpa}/ia/chat"
-    payload    = {"mensagem": mensagem, "historico": historico}
+    """Envia a pergunta ao endpoint RAG/Langchain e retorna a resposta."""
+    link_final = "http://127.0.0.1:8000/ia/chat"
+    payload    = {"pergunta": mensagem, "historico": historico}
+
     try:
-        resposta = requests.post(link_final, json=payload, timeout=30)
+        resposta = requests.post(link_final, json=payload, timeout=90)
+        
+        # ADICIONE ESTAS DUAS LINHAS:
+        if resposta.status_code == 422:
+            print(f"🕵️ DETALHE DO ERRO 422: {resposta.text}")
         if resposta.status_code == 200:
             return resposta.json().get("resposta", "Sem resposta do servidor.")
         return f"⚠️ Erro na API: Código {resposta.status_code}"

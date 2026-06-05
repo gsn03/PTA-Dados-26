@@ -3,6 +3,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, func, case, asc
 from datetime import date, timedelta
 import sys
+import os
+from pydantic import BaseModel
+from typing import List, Dict, Any
 from pathlib import Path
 from pydantic import BaseModel
 
@@ -25,31 +28,65 @@ def get_db():
     finally:
         db.close()
 
-# estrutura dos dados que o Streamlit vai enviar
+    
+# =====================================================================
+# MOTOR RAG E LLM
+# =====================================================================
+import sys
+from pathlib import Path
+from langchain_core.messages import HumanMessage, AIMessage
+
+# Adiciona a pasta do grafo ao sistema para o Python conseguir importar
+pasta_grafo = Path(__file__).resolve().parent.parent.parent / "fase2_agente" / "grafo"
+sys.path.append(str(pasta_grafo))
+
+# Importa o cérebro LangGraph que construímos
+from fluxo_inicial import grafo_completo
+
+from pydantic import BaseModel
+from typing import List, Dict, Any
+
 class RequisicaoChat(BaseModel):
     pergunta: str
     historico: List[Dict[str, Any]] = []
+    
+@router.post("/chat")
+def responder_chat(requisicao: RequisicaoChat):
+    pergunta_usuario = requisicao.pergunta
+    historico_dicts = requisicao.historico
+    
+    print("\n=======================================================")
+    print(f"NOVA REQUISIÇÃO VIA INTERFACE: {pergunta_usuario}")
+    print("=======================================================\n")
+    
+    # 1. Converter o histórico que vem do Streamlit para o formato do LangChain
+    mensagens_langgraph = []
+    for msg in historico_dicts:
+        if msg["role"] == "user":
+            mensagens_langgraph.append(HumanMessage(content=msg["content"]))
+        elif msg["role"] == "assistant":
+            mensagens_langgraph.append(AIMessage(content=msg["content"]))
+            
+    # 2. Adicionar a pergunta atual ao final da lista
+    mensagens_langgraph.append(HumanMessage(content=pergunta_usuario))
+    
+    # 3. Montar o estado inicial exigido pelo seu fluxo_inicial.py
+    estado_inicial = {
+        "messages": mensagens_langgraph,
+        "pergunta_reformulada": "",
+        "contexto_recuperado": "",
+        "resposta_gerada": ""
+    }
+    
+    # 4. Invocar o Grafo (O verdadeiro Agente Jurídico com Roteador, Buscador, Redator e Validador)
+    try:
+        estado_final = grafo_completo.invoke(estado_inicial)
+        # Extrai a resposta aprovada pelo Auditor
+        texto_final = estado_final.get("resposta_gerada", "SISTEMA_VALIDACAO: Não foi possível gerar uma resposta.")
+    except Exception as e:
+        texto_final = f"SISTEMA_VALIDACAO: Ocorreu um erro no processamento do Agente: {str(e)}"
 
-# criamos a rota exata que o frontend está chamando
-@router.post("/ia/chat")
-async def responder_chat(requisicao: RequisicaoChat):
-    pergunta = requisicao.pergunta
-    historico = requisicao.historico
-    
-    # =====================================================================
-    # AQUI ENTRARÁ O SEU MOTOR RAG E LANGGRAPH
-    # (Por enquanto, vamos retornar uma resposta padrão apenas para testar a conexão)
-    # =====================================================================
-    
-    # Simulando uma resposta de teste
-    resposta_bot = (
-        f"A conexão foi um sucesso! Recebi sua pergunta: **'{pergunta}'**.\n\n"
-        f"Nesta etapa, o meu backend fará a busca no banco vetorial para analisar "
-        f"os documentos de João Silva, Camila Martins, e os demais PDFs que você possui."
-    )
-    
-    # 3. Retornamos o JSON no formato que o Streamlit espera ler
-    return {"resposta": resposta_bot}
+    return {"resposta": texto_final}
 
 #Histórico de Processo (Resolve o problema dos números duplicados)
 @router.get("/processo_historico")

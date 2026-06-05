@@ -60,18 +60,25 @@ def node_busca_wrapper(state: EstadoAgente) -> Dict[str, Any]:
         "messages": [AIMessage(content=resultado_json_str, name="Buscador")],
         "contexto_recuperado": resultado_json_str
     }
-
 def node_resposta_wrapper(state: EstadoAgente) -> Dict[str, Any]:
-    pergunta_original = state["messages"][-1].content
+    # 1. Filtra a lista de mensagens para encontrar APENAS as que vieram do Humano
+    from langchain_core.messages import HumanMessage
+    mensagens_humanas = [m for m in state["messages"] if isinstance(m, HumanMessage)]
+    
+    # 2. Pega a última pergunta feita pelo humano
+    pergunta_original = mensagens_humanas[-1].content if mensagens_humanas else ""
+    
+    # 3. Pega o contexto recuperado pelo banco vetorial
     json_busca_str = state["contexto_recuperado"]
     
+    # 4. Envia a pergunta correta e os dados corretos para o Redator
     resposta_texto = executar_no_de_resposta(pergunta_original, json_busca_str)
     
     return {
         "messages": [AIMessage(content=resposta_texto, name="Redator")],
         "resposta_gerada": resposta_texto
     }
-
+    
 # -----------------------------------------------------------------------------
 # ROTEADOR DA VALIDAÇÃO (Conditional Edge)
 # -----------------------------------------------------------------------------
