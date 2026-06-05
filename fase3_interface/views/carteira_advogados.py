@@ -1,7 +1,7 @@
 """
 views/carteira_advogados.py — Carteira por Advogado
 Página única que exibe a carga de trabalho de um advogado selecionado,
-apresentando totais e a tabela dos 5 processos mais urgentes.
+apresentando totais e a tabela dos 20 processos mais urgentes.
 Cores: cinza #44464a | azul petróleo #084d6e
 """
 
@@ -30,7 +30,7 @@ def buscar_dados_carteira():
     try:
         resposta = requests.get(
             f"{API_URL}/ia/carteira_advogados",
-            timeout=10,
+            timeout=60,
         )
         if resposta.status_code == 200:
             return resposta.json().get("carteira", [])
@@ -48,7 +48,7 @@ def buscar_dados_carteira():
 def _tabela_prazos(prazos: list):
     st.markdown(
         f"<p style='font-weight:700; color:{COR_AMARELO}; font-size:1rem; margin-top: 1rem;'>"
-        "Top 5 - Próximos prazos urgentes na carteira:</p>",
+        "Top 20 - Próximos prazos urgentes na carteira:</p>",
         unsafe_allow_html=True,
     )
 
