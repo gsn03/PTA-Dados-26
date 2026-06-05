@@ -311,21 +311,66 @@ def renderizar_tela():
             text-align: center; font-size: 3.2rem; font-weight: 600; letter-spacing: -0.02em;
             background: -webkit-linear-gradient(45deg, #084d6e, #44464a, #0a5f87);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            margin-top: 15vh; margin-bottom: 5vh; animation: fadeIn 1.2s ease-in;
+            animation: fadeIn 1.2s ease-in;
+            margin: 0; padding: 0;
         }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Wrapper fixo ancorado entre o topo (descontando header ~3.5rem)
+           e a base (descontando a altura do stBottomBlockContainer ~100px).
+           O flexbox centraliza o titulo verticalmente no espaco livre,
+           tornando-o imune a qualquer conteudo acima (banner de avisos, etc.). */
+        .gemini-title-wrapper {
+            position: fixed;
+            top: 3.5rem;
+            left: 200px;
+            right: 0;
+            bottom: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 1;
+        }
         </style>
     """, unsafe_allow_html=True)
 
     if vazio:
-        st.markdown("""
-            <style>
-            [data-testid="stChatInput"] {
-                bottom: 35vh !important;
+        # Detecta se o banner de aviso esta visivel neste momento
+        banner_ativo = (
+            st.session_state.get("qtd_criticos", 0) > 0
+            and st.session_state.get("ultima_data_interacao") != datetime.now().date()
+        )
+
+        if banner_ativo:
+            # COM banner: input fica na posicao nativa (base da tela).
+            # Titulo centralizado no espaco livre entre header e input (bottom=100px do wrapper).
+            input_css = ""
+            wrapper_bottom = "100px"
+        else:
+            # SEM banner: eleva o container do input para o centro da tela
+            # e ajusta o wrapper do titulo para acompanhar.
+            input_css = """
+            [data-testid="stBottomBlockContainer"] {
+                transform: translateY(-30vh) !important;
+                background: transparent !important;
             }
+            [data-testid="stBottomBlockContainer"]::before {
+                display: none !important;
+            }
+            """
+            # bottom do wrapper = 100px (input) + 30vh deslocamento
+            wrapper_bottom = "calc(100px + 30vh)"
+
+        st.markdown(f"""
+            <style>
+            {input_css}
+            .gemini-title-wrapper {{
+                bottom: {wrapper_bottom} !important;
+            }}
             </style>
-            <div style="width: 100%; display: flex; justify-content: center;">
-                <h1 class='gemini-title'>Como posso otimizar seu trabalho hoje?</h1>
+            <div class="gemini-title-wrapper">
+                <h1 class="gemini-title">Como posso otimizar seu trabalho hoje?</h1>
             </div>
         """, unsafe_allow_html=True)
     else:
