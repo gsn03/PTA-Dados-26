@@ -54,10 +54,6 @@ if deve_exibir_notificacao and "qtd_criticos" not in st.session_state:
 elif not deve_exibir_notificacao:
     st.session_state.qtd_criticos = 0
 
-<<<<<<< HEAD
-=======
-
->>>>>>> ajustes_chatbot
 # ── Sidebar ─────────────────────────────────────────────────────────────────
 with st.sidebar:
     # ── Logo da Empresa ──────────────────────────────────────────────────────
@@ -179,35 +175,7 @@ with st.sidebar:
             </style>""",
             unsafe_allow_html=True,
         )
-
-# ── 🚨 RETÂNGULO DE NOTIFICAÇÃO DEITADO (TOPO) ──────────────────────────────
-if deve_exibir_notificacao and st.session_state.qtd_criticos > 0:
-    with st.container(border=True): # Cria o retângulo em volta
-        # Dividimos o retângulo: 60% para o texto, 20% para cada botão
-        col_texto, col_btn_ver, col_btn_fechar = st.columns([3, 1, 1])
         
-        with col_texto:
-            # 2 linhas de mensagem formatadas com HTML nativo para ficarem juntas
-            st.markdown(
-                f"<h4 style='margin-bottom:0; padding-bottom:5px; color:#c0392b;'>🚨 Aviso de Prazos Críticos</h4>"
-                f"<p style='margin-top:0; padding-top:0; color:#555;'>Você tem <b>{st.session_state.qtd_criticos} novos processos</b> entrando em vencimento. Recomendamos a verificação imediata.</p>",
-                unsafe_allow_html=True
-            )
-            
-        with col_btn_ver:
-            st.write("") # Espaço para o botão descer um pouco e alinhar com o texto
-            if st.button("Ver mais", use_container_width=True, key="btn_notif_ver_mais", type="primary"):
-                st.session_state.pagina_atual = "notificador_prazos"
-                st.session_state.ultima_data_interacao = hoje
-                st.rerun()
-                
-        with col_btn_fechar:
-            st.write("") # Espaço para o botão descer um pouco e alinhar com o texto
-            if st.button("Fechar", use_container_width=True, key="btn_notif_fechar"):
-                st.session_state.ultima_data_interacao = hoje
-                st.rerun()
-
-
 # ── 🚨 RETÂNGULO DE NOTIFICAÇÃO DEITADO (TOPO) ──────────────────────────────
 if deve_exibir_notificacao and st.session_state.qtd_criticos > 0:
     with st.container(border=True): # Cria o retângulo em volta
