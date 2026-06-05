@@ -24,10 +24,10 @@ COR_GRADE      = "#ebebeb"
 
 # Tons de cinza para barras agrupadas por status
 PALETA_CINZAS = [
-    "#44464a",   # cinza escuro (principal)
-    "#6b6d72",   # cinza médio
-    "#9a9b9f",   # cinza claro
-    "#c4c5c8",   # cinza muito claro
+    "#0000FF",   # cinza escuro (principal)
+    "#00CED1",   # cinza médio
+    "#4682B4",   # cinza claro
+    "#87CEFA",   # cinza muito claro
     "#084d6e",   # azul petróleo (destaque extra)
 ]
 
