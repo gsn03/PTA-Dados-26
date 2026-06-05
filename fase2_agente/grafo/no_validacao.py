@@ -18,7 +18,7 @@ os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
 # 2. CONFIGURAÇÃO DA IA DE VALIDAÇÃO
 # Usamos temperatura 0 pois um juiz precisa ser determinístico e não criativo
 
-llm_validador = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
+llm_validador = ChatGoogleGenerativeAI(model=os.getenv("LLM_MODEL", "gemini-2.5-flash"), temperature=0)
 
 # 3. SCHEMA DE DADOS
 class ValidacaoPayload(TypedDict):
